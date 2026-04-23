@@ -61,7 +61,7 @@ const Cursor = ({ position }: { position: any }) => {
   return (
     <motion.li
       animate={position}
-      className="absolute z-0 h-[36px] md:h-[40px] rounded-full bg-lime/20 backdrop-blur-md border border-lime/30 shadow-[0_0_15px_rgba(193,217,73,0.2)]"
+      className="absolute z-0 inset-y-1 rounded-full bg-lime/20 backdrop-blur-md border border-lime/30 shadow-[0_0_15px_rgba(193,217,73,0.2)]"
     />
   );
 }

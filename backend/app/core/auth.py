@@ -1,7 +1,9 @@
-import os
 from fastapi import Request, HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
+from jwt import PyJWKClient
+
+from app.core.config import get_settings
 
 # Note: In production, you would use a package like PyJWT with Clerk's public key
 # or an official clerk-sdk-python to verify the token properly.
@@ -15,23 +17,25 @@ def verify_clerk_token(credentials: HTTPAuthorizationCredentials = Security(secu
     """
     token = credentials.credentials
     
-    # In a real implementation:
-    # 1. Fetch Clerk public keys from https://api.clerk.com/v1/jwks
-    # 2. Verify the JWT token signature using the public key
-    # 3. Check token expiration and audience
-    
+    settings = get_settings()
     try:
-        # Example decoding (without verification just to extract claims)
-        # unverified_claims = jwt.decode(token, options={"verify_signature": False})
-        # return unverified_claims
-        pass
-    except Exception as e:
+        jwk_client = PyJWKClient(settings.clerk_jwks_url)
+        signing_key = jwk_client.get_signing_key_from_jwt(token)
+        unverified = jwt.decode(token, options={"verify_signature": False})
+        issuer = unverified.get("iss")
+        decoded = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            issuer=issuer,
+            options={"verify_aud": False},
+        )
+        return decoded
+    except Exception:
         raise HTTPException(
             status_code=401,
             detail="Invalid authentication credentials"
         )
-    
-    return {"user_id": "placeholder_clerk_user_id"}
 
 def get_current_user(request: Request, user_data: dict = Security(verify_clerk_token)):
     """

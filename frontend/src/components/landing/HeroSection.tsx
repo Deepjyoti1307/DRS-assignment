@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 
 /* ── Swap hero content here ── */
-const HERO_BADGE = "REVOLUTIONIZING EVENT TECH — LIVE";
+const HERO_BADGE = "REVOLUTIONIZING EVENT TECH";
 const HERO_TITLE_PARTS = {
   line1_start: "Go from ",
   line1_accent: "Idea",
@@ -62,8 +62,8 @@ export default function HeroSection() {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up"
           style={{ animationDelay: "0.3s" }}
         >
-          <Link 
-            href="/sign-in" 
+          <Link
+            href="/sign-in"
             style={{ backgroundColor: 'transparent', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
             className="group flex items-center gap-2 px-7 py-3.5 rounded-full border border-lime/50 text-white font-semibold text-sm transition-all duration-300 shadow-[0_0_15px_rgba(193,217,73,0.1)] hover:bg-lime/10 hover:border-lime/70 hover:shadow-[0_0_25px_rgba(193,217,73,0.2)]"
           >
