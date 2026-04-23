@@ -8,19 +8,28 @@ Centralises all business logic for attendee registrations:
   • Capacity accounting (approved/registered consume; revoke frees)
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 
 from beanie import PydanticObjectId
+from beanie.operators import In
 from fastapi import HTTPException
 
 from app.models.event import Event, EventStatus, RegistrationMode
+from app.models.organizer import Organizer
 from app.models.registration import (
     Registration,
     RSVPStatus,
     OPEN_TRANSITIONS,
     SHORTLISTED_TRANSITIONS,
 )
+from app.services.email_service import (
+    trigger_registration_received,
+    trigger_registration_approved,
+    trigger_registration_rejected,
+    trigger_registration_revoked,
+)
+from app.services.integrations.hubspot_service import trigger_hubspot_sync
 
 
 # ── Capacity helpers ─────────────────────────────────
@@ -33,7 +42,7 @@ async def _count_active_registrations(event_id: str) -> int:
     """Return the number of registrations that currently consume capacity."""
     return await Registration.find(
         Registration.event_id == event_id,
-        Registration.status.is_in(list(_CAPACITY_CONSUMING_STATUSES)),  # type: ignore[attr-defined]
+        In(Registration.status, list(_CAPACITY_CONSUMING_STATUSES)),
     ).count()
 
 
@@ -128,9 +137,11 @@ async def create_registration(
     existing = await Registration.find_one(
         Registration.event_id == event_id,
         Registration.attendee_email == attendee_email,
-        Registration.status.is_in(  # type: ignore[attr-defined]
-            [RSVPStatus.registered, RSVPStatus.pending, RSVPStatus.approved]
-        ),
+        In(Registration.status, [
+            RSVPStatus.registered,
+            RSVPStatus.pending,
+            RSVPStatus.approved,
+        ]),
     )
     if existing:
         raise HTTPException(
@@ -155,6 +166,24 @@ async def create_registration(
         custom_fields=custom_fields,
     )
     await registration.insert()
+
+    # ── Non-blocking triggers (fire-and-forget) ──
+    trigger_registration_received(
+        attendee_email=attendee_email,
+        attendee_name=attendee_name,
+        event_title=event.title,
+        status=initial_status.value,
+    )
+    organizer = await Organizer.find_one(Organizer.clerk_user_id == event.organizer_id)
+    trigger_hubspot_sync(
+        registration_id=str(registration.id),
+        organizer_hubspot_key=organizer.hubspot_api_key if organizer else None,
+        attendee_email=attendee_email,
+        attendee_name=attendee_name,
+        event_title=event.title,
+        status=initial_status.value,
+    )
+
     return registration
 
 
@@ -207,7 +236,31 @@ async def update_registration_status(
 
     # Apply
     reg.status = target_status
-    reg.updated_at = datetime.utcnow()
+    reg.updated_at = datetime.now(timezone.utc)
     await reg.save()
+
+    # ── Non-blocking triggers (fire-and-forget) ──
+    _STATUS_EMAIL_TRIGGERS = {
+        RSVPStatus.approved: trigger_registration_approved,
+        RSVPStatus.rejected: trigger_registration_rejected,
+        RSVPStatus.revoked:  trigger_registration_revoked,
+    }
+    email_trigger = _STATUS_EMAIL_TRIGGERS.get(target_status)
+    if email_trigger:
+        email_trigger(
+            attendee_email=reg.attendee_email,
+            attendee_name=reg.attendee_name,
+            event_title=event.title,
+        )
+
+    organizer = await Organizer.find_one(Organizer.clerk_user_id == event.organizer_id)
+    trigger_hubspot_sync(
+        registration_id=str(reg.id),
+        organizer_hubspot_key=organizer.hubspot_api_key if organizer else None,
+        attendee_email=reg.attendee_email,
+        attendee_name=reg.attendee_name,
+        event_title=event.title,
+        status=target_status.value,
+    )
 
     return reg
