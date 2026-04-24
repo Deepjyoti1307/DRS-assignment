@@ -1,6 +1,8 @@
 import React from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import Footer from "@/components/landing/Footer";
+import { DashboardTransition } from "@/components/dashboard/DashboardTransition";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 
 export default function DashboardLayout({
   children,
@@ -15,7 +17,11 @@ export default function DashboardLayout({
         <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-lime/5 to-transparent pointer-events-none" />
         
         <div className="relative z-10 flex-1 p-8 max-w-7xl mx-auto w-full">
-          {children}
+          <ErrorBoundary>
+            <DashboardTransition>
+              {children}
+            </DashboardTransition>
+          </ErrorBoundary>
         </div>
 
         <div className="mt-auto relative z-10 w-full px-8">

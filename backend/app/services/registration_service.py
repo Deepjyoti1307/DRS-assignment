@@ -15,11 +15,20 @@ from beanie import PydanticObjectId
 from beanie.operators import In
 from fastapi import HTTPException
 
+
+def _safe_id(id_str: str) -> PydanticObjectId:
+    """Safely convert string to PydanticObjectId or raise 400."""
+    try:
+        return PydanticObjectId(id_str)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f"Invalid ID format: {id_str}")
+
 from app.models.event import Event, EventStatus, RegistrationMode
 from app.models.organizer import Organizer
 from app.models.registration import (
     Registration,
     RSVPStatus,
+    StatusHistoryItem,
     OPEN_TRANSITIONS,
     SHORTLISTED_TRANSITIONS,
 )
@@ -63,7 +72,7 @@ async def _get_published_event(event_id: str) -> Event:
     Fetch an event that is published, not cancelled, and not in the past.
     Used by the public registration endpoint.
     """
-    event = await Event.get(PydanticObjectId(event_id))
+    event = await Event.get(_safe_id(event_id))
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
@@ -81,7 +90,7 @@ async def _get_published_event(event_id: str) -> Event:
 
 async def _get_event_for_organizer(event_id: str, organizer_id: str) -> Event:
     """Fetch an event ensuring the caller is the owner."""
-    event = await Event.get(PydanticObjectId(event_id))
+    event = await Event.get(_safe_id(event_id))
     if not event or event.organizer_id != organizer_id:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
@@ -165,6 +174,7 @@ async def create_registration(
         attendee_name=attendee_name,
         attendee_phone=attendee_phone,
         status=initial_status,
+        status_history=[StatusHistoryItem(status=initial_status)],
         registration_mode_snapshot=event.registration_mode,
         custom_fields=custom_fields,
     )
@@ -210,6 +220,18 @@ async def list_registrations(
     return await query.sort("-created_at").to_list()
 
 
+async def list_all_registrations(
+    organizer_id: str,
+    status_filter: Optional[RSVPStatus] = None,
+) -> List[Registration]:
+    """List all registrations across all events owned by the organizer."""
+    query = Registration.find(Registration.organizer_id == organizer_id)
+    if status_filter:
+        query = query.find(Registration.status == status_filter)
+
+    return await query.sort("-created_at").to_list()
+
+
 async def update_registration_status(
     registration_id: str,
     target_status: RSVPStatus,
@@ -223,7 +245,7 @@ async def update_registration_status(
       2. State machine validity (only allowed transitions).
       3. Capacity limits (approval must not exceed event capacity).
     """
-    reg = await Registration.get(PydanticObjectId(registration_id))
+    reg = await Registration.get(_safe_id(registration_id))
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found")
 
@@ -239,6 +261,7 @@ async def update_registration_status(
 
     # Apply
     reg.status = target_status
+    reg.status_history.append(StatusHistoryItem(status=target_status))
     reg.updated_at = datetime.now(timezone.utc)
     await reg.save()
 
@@ -267,3 +290,61 @@ async def update_registration_status(
     )
 
     return reg
+
+
+async def get_audit_logs(organizer_id: str, limit: int = 100) -> List[dict]:
+    """
+    Returns a flattened feed of status transitions across all registrations.
+    """
+    # Fetch registrations with their history
+    regs = await Registration.find(Registration.organizer_id == organizer_id).to_list()
+    
+    # Flatten history items
+    feed = []
+    for r in regs:
+        for h in r.status_history:
+            feed.append({
+                "registration_id": str(r.id),
+                "attendee_name": r.attendee_name,
+                "attendee_email": r.attendee_email,
+                "event_id": r.event_id,
+                "status": h.status,
+                "changed_at": h.changed_at,
+                "reason": h.reason
+            })
+            
+    # Sort by time descending
+    feed.sort(key=lambda x: x["changed_at"], reverse=True)
+    return feed[:limit]
+
+
+async def sync_all_to_hubspot(organizer_id: str) -> dict:
+    """
+    Force-sync all existing registrations for this organizer to HubSpot.
+    Returns a summary of the operation.
+    """
+    organizer = await Organizer.find_one(Organizer.clerk_user_id == organizer_id)
+    if not organizer or not organizer.hubspot_api_key:
+        raise HTTPException(status_code=400, detail="HubSpot integration not configured")
+
+    # Fetch all registrations for this organizer
+    registrations = await Registration.find(Registration.organizer_id == organizer_id).to_list()
+    
+    # Fetch events in bulk to get titles efficiently
+    event_ids = list(set(r.event_id for r in registrations))
+    events = await Event.find(In(Event.id, [PydanticObjectId(eid) for eid in event_ids])).to_list()
+    event_map = {str(e.id): e.title for e in events}
+
+    count = 0
+    for reg in registrations:
+        trigger_hubspot_sync(
+            registration_id=str(reg.id),
+            organizer_hubspot_key=organizer.hubspot_api_key,
+            attendee_email=reg.attendee_email,
+            attendee_name=reg.attendee_name,
+            event_title=event_map.get(reg.event_id, "Unknown Event"),
+            status=reg.status.value,
+        )
+        count += 1
+
+    return {"status": "success", "synced_count": count}

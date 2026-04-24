@@ -116,6 +116,8 @@ async def update_event(event_id: str, payload, user: dict):
 
 async def delete_event(event_id: str, user: dict):
 	event = await get_event_by_id(event_id, user)
+	# Cascading delete: registrations first
+	await Registration.find(Registration.event_id == str(event.id)).delete()
 	await event.delete()
 
 

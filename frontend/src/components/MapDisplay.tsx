@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -17,9 +17,19 @@ interface MapDisplayProps {
   lat: number;
   lng: number;
   venueName?: string;
+  onLocationSelect?: (lat: number, lng: number) => void;
 }
 
-export default function MapDisplay({ lat, lng, venueName }: MapDisplayProps) {
+function MapEvents({ onSelect }: { onSelect: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+export default function MapDisplay({ lat, lng, venueName, onLocationSelect }: MapDisplayProps) {
   useEffect(() => {
     // This helps leaflet know to resize if its container changes
     setTimeout(() => {
@@ -40,6 +50,7 @@ export default function MapDisplay({ lat, lng, venueName }: MapDisplayProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
+        {onLocationSelect && <MapEvents onSelect={onLocationSelect} />}
         <Marker position={[lat, lng]}>
           {venueName && (
             <Popup>

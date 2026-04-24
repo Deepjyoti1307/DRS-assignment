@@ -17,10 +17,9 @@ import { UserButton } from "@clerk/nextjs";
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
-  { icon: Calendar, label: "My Events", href: "/dashboard/events" },
   { icon: Users, label: "Attendees", href: "/dashboard/attendees" },
-  { icon: Zap, label: "Integrations", href: "/dashboard/integrations" },
   { icon: History, label: "Audit Trail", href: "/dashboard/audit" },
+  { icon: Zap, label: "Integrations", href: "/dashboard/integrations" },
   { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];
 

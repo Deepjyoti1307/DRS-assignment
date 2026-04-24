@@ -20,7 +20,9 @@ from app.models.registration import RSVPStatus
 from app.services.registration_service import (
     create_registration,
     list_registrations,
+    list_all_registrations,
     update_registration_status,
+    get_audit_logs,
 )
 
 router = APIRouter(tags=["registrations"])
@@ -76,6 +78,30 @@ async def get_registrations(
     """
     organizer_id = user.get("sub") or user.get("user_id")
     return await list_registrations(event_id, organizer_id, status)
+
+
+@router.get("/api/registrations")
+async def get_all_registrations(
+    status: Optional[RSVPStatus] = Query(None, description="Filter by RSVP status"),
+    user=Depends(get_current_user),
+):
+    """
+    List all registrations across all events for the current organizer.
+    """
+    organizer_id = user.get("sub") or user.get("user_id")
+    return await list_all_registrations(organizer_id, status)
+
+
+@router.get("/api/registrations/audit")
+async def get_all_audit_logs(
+    limit: int = Query(100, ge=1, le=500),
+    user=Depends(get_current_user),
+):
+    """
+    Get a global feed of all status transitions across all registrations.
+    """
+    organizer_id = user.get("sub") or user.get("user_id")
+    return await get_audit_logs(organizer_id, limit)
 
 
 @router.patch("/api/registrations/{registration_id}/approve")

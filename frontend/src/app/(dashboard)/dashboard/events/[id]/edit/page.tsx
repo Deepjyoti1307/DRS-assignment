@@ -3,12 +3,22 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { fetchEvent, updateEvent, publishEvent } from "@/lib/api";
+import { fetchEvent, updateEvent, publishEvent, deleteEvent } from "@/lib/api";
 import { Event } from "@/lib/types";
-import { ArrowLeft, CheckCircle2, Clock, Image as ImageIcon, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Image as ImageIcon, Send, MapPin } from "lucide-react";
 import Link from "next/link";
 
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import dynamic from "next/dynamic";
+
+const MapDisplay = dynamic(() => import("@/components/MapDisplay"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-white/5 animate-pulse flex items-center justify-center border border-white/10 rounded-xl">
+      <MapPin className="w-8 h-8 text-white/20" />
+    </div>
+  ),
+});
 
 export default function EventEditor({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -135,23 +145,19 @@ export default function EventEditor({ params }: { params: { id: string } }) {
   };
 
   const handleDelete = async () => {
-    const confirmed = window.confirm("Are you sure you want to delete this event? This action cannot be undone.");
-    if (!confirmed) return;
+    if (!window.confirm("Are you sure you want to delete this event? This will also remove all attendee records and cannot be undone.")) return;
 
     try {
       setIsDeleting(true);
       const token = await getToken();
-      if (!token) throw new Error("No token");
+      if (!token) throw new Error("Authentication failed");
 
-      // Wait, deleteEvent is not imported. We need to import it.
-      // Assuming deleteEvent is exported from @/lib/api
-      // Wait, let me check the import on line 6: import { fetchEvent, updateEvent, publishEvent, deleteEvent } from "@/lib/api";
-      const { deleteEvent } = await import("@/lib/api");
       await deleteEvent(token, params.id);
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Delete failed:", error);
-      alert("Failed to delete event.");
+      router.push("/dashboard/events");
+    } catch (err: any) {
+      console.error("Delete failed:", err);
+      alert(err.message || "Failed to delete event. Please ensure you have permission.");
+    } finally {
       setIsDeleting(false);
     }
   };
@@ -356,19 +362,44 @@ export default function EventEditor({ params }: { params: { id: string } }) {
                     placeholder="Zoom Link"
                   />
                 ) : (
-                  <AddressAutocomplete 
-                    value={formData.venue || ""}
-                    onChange={(addr, lat, lng) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        venue: addr,
-                        location_lat: lat,
-                        location_lng: lng
-                      }));
-                      isDirty.current = true;
-                    }}
-                    placeholder="Physical Address"
-                  />
+                  <div className="space-y-4">
+                    <AddressAutocomplete 
+                      value={formData.venue || ""}
+                      onChange={(addr, lat, lng) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          venue: addr,
+                          location_lat: lat,
+                          location_lng: lng
+                        }));
+                        isDirty.current = true;
+                      }}
+                      placeholder="Physical Address (e.g. RCCIIT, Kolkata)"
+                    />
+                    
+                    {formData.location_lat && formData.location_lng && (
+                      <div className="h-48 rounded-xl overflow-hidden border border-white/10 group relative">
+                        <div className="absolute top-3 right-3 z-10">
+                           <div className="px-2 py-1 bg-lime text-[#1a1e0a] text-[10px] font-bold rounded-md shadow-lg flex items-center gap-1.5">
+                              <MapPin className="w-3 h-3" /> Exact Coordinates Locked
+                           </div>
+                        </div>
+                        <MapDisplay 
+                          lat={formData.location_lat} 
+                          lng={formData.location_lng} 
+                          venueName={formData.venue} 
+                          onLocationSelect={(lat, lng) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              location_lat: lat,
+                              location_lng: lng
+                            }));
+                            isDirty.current = true;
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 

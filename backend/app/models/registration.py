@@ -46,6 +46,13 @@ class SyncStatus(str, Enum):
     failed = "failed"
 
 
+class StatusHistoryItem(BaseModel):
+    """Represents a single entry in the registration's audit trail."""
+    status: RSVPStatus
+    changed_at: datetime = Field(default_factory=datetime.utcnow)
+    reason: Optional[str] = None
+
+
 class Registration(Document):
     """
     Represents one attendee's registration for a single event.
@@ -57,6 +64,7 @@ class Registration(Document):
     attendee_name: str
     attendee_phone: Optional[str] = None
     status: RSVPStatus = RSVPStatus.pending
+    status_history: list[StatusHistoryItem] = []
     registration_mode_snapshot: Optional[RegistrationMode] = None
     custom_fields: Optional[Dict[str, Any]] = None   # free-form metadata from registration form
 

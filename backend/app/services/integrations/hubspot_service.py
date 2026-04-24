@@ -36,6 +36,8 @@ def _fire_and_forget(coro):
 
 # ── HubSpot API stubs ───────────────────────────────
 
+import httpx
+
 async def _upsert_hubspot_contact(
     api_key: str,
     email: str,
@@ -44,34 +46,68 @@ async def _upsert_hubspot_contact(
     status: str,
 ) -> Optional[str]:
     """
-    Stub — Create or update a HubSpot contact.
+    Search for a contact by email. If found, update it. If not, create it.
     Returns the HubSpot contact ID on success, None on failure.
-
-    Replace with real HubSpot API v3 calls:
-      POST https://api.hubapi.com/crm/v3/objects/contacts
-      PATCH https://api.hubapi.com/crm/v3/objects/contacts/{contactId}
     """
-    logger.info(
-        f"[HUBSPOT] Upsert contact: {email} | event={event_title} | status={status}"
-    )
-    # TODO: Implement real HubSpot API call
-    # Example:
-    #   async with httpx.AsyncClient() as client:
-    #       resp = await client.post(
-    #           "https://api.hubapi.com/crm/v3/objects/contacts",
-    #           headers={"Authorization": f"Bearer {api_key}"},
-    #           json={
-    #               "properties": {
-    #                   "email": email,
-    #                   "firstname": name.split()[0] if name else "",
-    #                   "lastname": " ".join(name.split()[1:]) if name else "",
-    #                   "last_event": event_title,
-    #                   "registration_status": status,
-    #               }
-    #           },
-    #       )
-    #       return resp.json().get("id")
-    return None
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    # Split name into first/last
+    name_parts = name.split()
+    first_name = name_parts[0] if name_parts else ""
+    last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            # 1. Search for contact
+            search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
+            search_payload = {
+                "filterGroups": [
+                    {
+                        "filters": [
+                            {
+                                "propertyName": "email",
+                                "operator": "EQ",
+                                "value": email
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+            search_resp = await client.post(search_url, headers=headers, json=search_payload)
+            search_data = search_resp.json()
+            
+            contact_id = None
+            if search_resp.status_code == 200 and search_data.get("total", 0) > 0:
+                contact_id = search_data["results"][0]["id"]
+
+            properties = {
+                "email": email,
+                "firstname": first_name,
+                "lastname": last_name,
+                "last_event_registered": event_title,
+                "registration_status": status,
+            }
+
+            if contact_id:
+                # 2. Update existing
+                update_url = f"https://api.hubapi.com/crm/v3/objects/contacts/{contact_id}"
+                await client.patch(update_url, headers=headers, json={"properties": properties})
+                return contact_id
+            else:
+                # 3. Create new
+                create_url = "https://api.hubapi.com/crm/v3/objects/contacts"
+                create_resp = await client.post(create_url, headers=headers, json={"properties": properties})
+                if create_resp.status_code in (201, 200):
+                    return create_resp.json().get("id")
+                
+            return None
+        except Exception as e:
+            logger.error(f"[HUBSPOT] API Error: {str(e)}")
+            return None
 
 
 # ── Sync status updater ─────────────────────────────

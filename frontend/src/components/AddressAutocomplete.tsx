@@ -45,9 +45,10 @@ export default function AddressAutocomplete({
     }
     setIsLoading(true);
     try {
-      // Using Photon API (Komoot) - Much better for autocomplete, POIs, and allows search-as-you-type
+      // Using Photon API (Komoot) with India bias
+      const IndiaBias = "&lat=20.5937&lon=78.9629&bbox=68.1,6.5,97.4,35.5";
       const res = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(searchTerm)}&limit=5`
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(searchTerm)}&limit=8${IndiaBias}`
       );
       const data = await res.json();
       
