@@ -9,6 +9,8 @@ from app.models.event import Event, EventStatus, EventMode, RegistrationMode
 from app.models.registration import Registration, RSVPStatus
 
 
+from beanie.operators import In
+
 def _slugify(text: str) -> str:
 	slug = re.sub(r"[^a-zA-Z0-9]+", "-", text.lower()).strip("-")
 	return slug or "event"
@@ -17,12 +19,17 @@ def _slugify(text: str) -> str:
 async def _count_capacity_consumed(event_id: str) -> int:
 	return await Registration.find(
 		Registration.event_id == event_id,
-		Registration.status.in_([RSVPStatus.registered, RSVPStatus.approved]),
+		In(Registration.status, [RSVPStatus.registered, RSVPStatus.approved]),
 	).count()
 
 
 async def get_public_event_by_slug(slug: str) -> Tuple[Event, dict]:
-	event = await Event.find_one(Event.slug == slug)
+	# Get the latest non-draft event with this slug
+	event = await Event.find(
+		Event.slug == slug,
+		Event.status != EventStatus.draft
+	).sort("-created_at").first_or_none()
+	
 	if not event:
 		raise HTTPException(status_code=404, detail="Event not found")
 
@@ -94,14 +101,21 @@ async def update_event(event_id: str, payload, user: dict):
 		updates["updated_at"] = datetime.utcnow()
 	for key, value in updates.items():
 		setattr(event, key, value)
+	
+	# Auto-update slug if title changed and event is still a draft
+	if "title" in updates and event.status == EventStatus.draft:
+		event.slug = _slugify(event.title)
+		
+	# Ensure slug exists
+	if not event.slug:
+		event.slug = _slugify(event.title or "event")
+		
 	await event.save()
 	return event
 
 
-async def delete_draft_event(event_id: str, user: dict):
+async def delete_event(event_id: str, user: dict):
 	event = await get_event_by_id(event_id, user)
-	if event.status != EventStatus.draft:
-		raise HTTPException(status_code=400, detail="Only draft events can be deleted")
 	await event.delete()
 
 
@@ -111,6 +125,11 @@ async def publish_event(event_id: str, user: dict):
 		raise HTTPException(status_code=400, detail="Only draft events can be published")
 	if event.date_time <= datetime.utcnow():
 		raise HTTPException(status_code=400, detail="Event date must be in the future")
+		
+	# Ensure slug exists
+	if not event.slug:
+		event.slug = _slugify(event.title or "event")
+		
 	event.status = EventStatus.published
 	event.updated_at = datetime.utcnow()
 	await event.save()

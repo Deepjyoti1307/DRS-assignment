@@ -8,7 +8,7 @@ from app.core.auth import get_current_user
 from app.models.event import Event, EventMode, EventStatus, RegistrationMode
 from app.services.event_service import (
     create_event,
-    delete_draft_event,
+    delete_event,
     get_event_by_id,
     list_events,
     publish_event,
@@ -29,6 +29,8 @@ class EventCreate(BaseModel):
     registration_mode: RegistrationMode
     template_used: Optional[str] = None
     image_url: Optional[str] = None
+    location_lat: Optional[float] = None
+    location_lng: Optional[float] = None
 
 
 class EventUpdate(BaseModel):
@@ -41,6 +43,8 @@ class EventUpdate(BaseModel):
     registration_mode: Optional[RegistrationMode] = None
     template_used: Optional[str] = None
     image_url: Optional[str] = None
+    location_lat: Optional[float] = None
+    location_lng: Optional[float] = None
 
 
 @router.get("")
@@ -68,7 +72,7 @@ async def update_event_handler(event_id: str, payload: EventUpdate, user=Depends
 
 @router.delete("/{event_id}")
 async def delete_event_handler(event_id: str, user=Depends(get_current_user)):
-    await delete_draft_event(event_id, user)
+    await delete_event(event_id, user)
     return {"status": "deleted"}
 
 

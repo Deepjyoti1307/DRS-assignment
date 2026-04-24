@@ -8,6 +8,8 @@ import { Event } from "@/lib/types";
 import { ArrowLeft, CheckCircle2, Clock, Image as ImageIcon, Send } from "lucide-react";
 import Link from "next/link";
 
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+
 export default function EventEditor({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { getToken } = useAuth();
@@ -20,6 +22,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Track if changes were made since last save
   const isDirty = useRef(false);
@@ -68,6 +71,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
         }
 
         // Clean up readonly fields
+        delete payloadToSave._id;
         delete payloadToSave.id;
         delete payloadToSave.organizer_id;
         delete payloadToSave.created_at;
@@ -111,6 +115,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
       if (payloadToSave.date_time) {
         payloadToSave.date_time = new Date(payloadToSave.date_time).toISOString();
       }
+      delete payloadToSave._id;
       delete payloadToSave.id;
       delete payloadToSave.organizer_id;
       delete payloadToSave.created_at;
@@ -126,6 +131,28 @@ export default function EventEditor({ params }: { params: { id: string } }) {
       alert("Failed to publish event. Ensure all fields are filled correctly.");
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm("Are you sure you want to delete this event? This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      const token = await getToken();
+      if (!token) throw new Error("No token");
+
+      // Wait, deleteEvent is not imported. We need to import it.
+      // Assuming deleteEvent is exported from @/lib/api
+      // Wait, let me check the import on line 6: import { fetchEvent, updateEvent, publishEvent, deleteEvent } from "@/lib/api";
+      const { deleteEvent } = await import("@/lib/api");
+      await deleteEvent(token, params.id);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Failed to delete event.");
+      setIsDeleting(false);
     }
   };
 
@@ -181,14 +208,23 @@ export default function EventEditor({ params }: { params: { id: string } }) {
             )}
           </div>
           
-          <button
-            onClick={handlePublish}
-            disabled={isPublishing || event.status === "published"}
-            className="px-6 py-2.5 bg-lime text-[#1a1e0a] font-bold rounded-xl hover:bg-lime/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            {isPublishing ? "Publishing..." : event.status === "published" ? "Published" : "Publish Event"}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-4 py-2.5 border border-red-500/50 text-red-400 font-bold rounded-xl hover:bg-red-500/10 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isDeleting ? "Deleting..." : "Delete Event"}
+            </button>
+            <button
+              onClick={handlePublish}
+              disabled={isPublishing || event.status === "published"}
+              className="px-6 py-2.5 bg-lime text-[#1a1e0a] font-bold rounded-xl hover:bg-lime/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Send className="w-4 h-4" />
+              {isPublishing ? "Publishing..." : event.status === "published" ? "Published" : "Publish Event"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -310,14 +346,30 @@ export default function EventEditor({ params }: { params: { id: string } }) {
 
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-2">Venue / Link</label>
-                <input
-                  type="text"
-                  name="venue"
-                  value={formData.venue || ""}
-                  onChange={handleChange}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-lime/50 focus:ring-1 focus:ring-lime/50 transition-all placeholder:text-white/20"
-                  placeholder={formData.mode === 'online' ? "Zoom Link" : "Physical Address"}
-                />
+                {formData.mode === 'online' ? (
+                  <input
+                    type="text"
+                    name="venue"
+                    value={formData.venue || ""}
+                    onChange={handleChange}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-lime/50 focus:ring-1 focus:ring-lime/50 transition-all placeholder:text-white/20"
+                    placeholder="Zoom Link"
+                  />
+                ) : (
+                  <AddressAutocomplete 
+                    value={formData.venue || ""}
+                    onChange={(addr, lat, lng) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        venue: addr,
+                        location_lat: lat,
+                        location_lng: lng
+                      }));
+                      isDirty.current = true;
+                    }}
+                    placeholder="Physical Address"
+                  />
+                )}
               </div>
 
               <div className="md:col-span-2">

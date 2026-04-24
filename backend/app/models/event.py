@@ -35,6 +35,8 @@ class Event(Document):
     template_used: Optional[str] = None
     slug: Optional[str] = None
     image_url: Optional[str] = None
+    location_lat: Optional[float] = None
+    location_lng: Optional[float] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
