@@ -6,6 +6,7 @@ from app.core.db import init_db
 from app.api.auth import router as auth_router
 from app.api.events import router as events_router
 from app.api.registrations import router as registrations_router
+from app.api.public import router as public_router
 
 
 def create_app() -> FastAPI:
@@ -23,6 +24,7 @@ def create_app() -> FastAPI:
 	app.include_router(auth_router)
 	app.include_router(events_router)
 	app.include_router(registrations_router)
+	app.include_router(public_router)
 
 	@app.on_event("startup")
 	async def on_startup() -> None:

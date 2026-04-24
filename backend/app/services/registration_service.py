@@ -123,6 +123,7 @@ async def create_registration(
     event_id: str,
     attendee_email: str,
     attendee_name: str,
+    attendee_phone: Optional[str] = None,
     custom_fields: Optional[dict] = None,
 ) -> Registration:
     """
@@ -162,7 +163,9 @@ async def create_registration(
         organizer_id=event.organizer_id,
         attendee_email=attendee_email,
         attendee_name=attendee_name,
+        attendee_phone=attendee_phone,
         status=initial_status,
+        registration_mode_snapshot=event.registration_mode,
         custom_fields=custom_fields,
     )
     await registration.insert()

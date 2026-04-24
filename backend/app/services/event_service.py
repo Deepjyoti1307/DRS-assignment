@@ -1,16 +1,56 @@
 from datetime import datetime
 import re
-from typing import Optional
+from typing import Optional, Tuple
 
 from beanie import PydanticObjectId
 from fastapi import HTTPException
 
 from app.models.event import Event, EventStatus, EventMode, RegistrationMode
+from app.models.registration import Registration, RSVPStatus
 
 
 def _slugify(text: str) -> str:
 	slug = re.sub(r"[^a-zA-Z0-9]+", "-", text.lower()).strip("-")
 	return slug or "event"
+
+
+async def _count_capacity_consumed(event_id: str) -> int:
+	return await Registration.find(
+		Registration.event_id == event_id,
+		Registration.status.in_([RSVPStatus.registered, RSVPStatus.approved]),
+	).count()
+
+
+async def get_public_event_by_slug(slug: str) -> Tuple[Event, dict]:
+	event = await Event.find_one(Event.slug == slug)
+	if not event:
+		raise HTTPException(status_code=404, detail="Event not found")
+
+	availability = {
+		"state": "open",
+		"capacity": event.capacity,
+		"consumed": 0,
+		"remaining": event.capacity,
+	}
+
+	if event.status == EventStatus.cancelled:
+		availability["state"] = "cancelled"
+		return event, availability
+
+	if event.status != EventStatus.published:
+		raise HTTPException(status_code=404, detail="Event not published")
+
+	if event.date_time <= datetime.utcnow():
+		availability["state"] = "closed"
+		return event, availability
+
+	consumed = await _count_capacity_consumed(str(event.id))
+	availability["consumed"] = consumed
+	availability["remaining"] = max(event.capacity - consumed, 0)
+	if consumed >= event.capacity:
+		availability["state"] = "full"
+
+	return event, availability
 
 
 async def list_events(user: dict, status: Optional[EventStatus]):

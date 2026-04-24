@@ -2,16 +2,18 @@
 Registration API Routes
 ~~~~~~~~~~~~~~~~~~~~~~~
 Public:
-  POST   /api/registrations                      → Register for an event
+    POST   /api/events/{event_id}/register          → Register for an event
 Organizer (auth required):
-  GET    /api/events/{event_id}/registrations     → List registrations for an event
-  PATCH  /api/registrations/{registration_id}     → Update registration status
+    GET    /api/events/{event_id}/registrations     → List registrations for an event
+    PATCH  /api/registrations/{registration_id}/approve
+    PATCH  /api/registrations/{registration_id}/reject
+    PATCH  /api/registrations/{registration_id}/revoke
 """
 
 from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 
 from app.core.auth import get_current_user
 from app.models.registration import RSVPStatus
@@ -28,9 +30,9 @@ router = APIRouter(tags=["registrations"])
 
 class RegistrationCreate(BaseModel):
     """Public registration request body."""
-    event_id: str
     attendee_email: str = Field(..., description="Attendee's email address")
     attendee_name: str = Field(..., min_length=1, max_length=200)
+    attendee_phone: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
 
 
@@ -43,14 +45,14 @@ class StatusUpdate(BaseModel):
 #  PUBLIC — No auth required
 # ═══════════════════════════════════════════════════════
 
-@router.post("/api/registrations", status_code=201)
-async def register(payload: RegistrationCreate):
+@router.post("/api/events/{event_id}/register", status_code=201)
+async def register(event_id: str, payload: RegistrationCreate):
     """
     Register an attendee for a published event.
     No authentication required — this is the public-facing endpoint.
     """
     registration = await create_registration(
-        event_id=payload.event_id,
+        event_id=event_id,
         attendee_email=payload.attendee_email,
         attendee_name=payload.attendee_name,
         custom_fields=payload.custom_fields,
@@ -76,20 +78,31 @@ async def get_registrations(
     return await list_registrations(event_id, organizer_id, status)
 
 
-@router.patch("/api/registrations/{registration_id}")
-async def update_status(
-    registration_id: str,
-    payload: StatusUpdate,
-    user=Depends(get_current_user),
-):
-    """
-    Update a registration's RSVP status (approve, reject, revoke).
-    Enforces state-machine rules and capacity limits.
-    Only the organizer who owns the parent event can perform this action.
-    """
+@router.patch("/api/registrations/{registration_id}/approve")
+async def approve_registration(registration_id: str, user=Depends(get_current_user)):
     organizer_id = user.get("sub") or user.get("user_id")
     return await update_registration_status(
         registration_id=registration_id,
-        target_status=payload.status,
+        target_status=RSVPStatus.approved,
+        organizer_id=organizer_id,
+    )
+
+
+@router.patch("/api/registrations/{registration_id}/reject")
+async def reject_registration(registration_id: str, user=Depends(get_current_user)):
+    organizer_id = user.get("sub") or user.get("user_id")
+    return await update_registration_status(
+        registration_id=registration_id,
+        target_status=RSVPStatus.rejected,
+        organizer_id=organizer_id,
+    )
+
+
+@router.patch("/api/registrations/{registration_id}/revoke")
+async def revoke_registration(registration_id: str, user=Depends(get_current_user)):
+    organizer_id = user.get("sub") or user.get("user_id")
+    return await update_registration_status(
+        registration_id=registration_id,
+        target_status=RSVPStatus.revoked,
         organizer_id=organizer_id,
     )

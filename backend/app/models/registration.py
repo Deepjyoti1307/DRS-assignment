@@ -1,10 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Set
 
 from beanie import Document
 from pydantic import BaseModel, Field
 
+from app.models.event import RegistrationMode
 
 class RSVPStatus(str, Enum):
     """
@@ -14,7 +15,7 @@ class RSVPStatus(str, Enum):
     Shortlisted mode:     new → pending → approved / rejected
     Revoke allowed from:  registered, approved
     """
-    new = "new"               # initial state (never persisted — used only for transition logic)
+    new = "new"               # initial state (used only for transition logic)
     pending = "pending"       # awaiting organizer review  (shortlisted mode)
     approved = "approved"     # organizer approved          (shortlisted mode)
     rejected = "rejected"     # organizer rejected          (shortlisted mode)
@@ -23,13 +24,15 @@ class RSVPStatus(str, Enum):
 
 
 # ── Valid transition map ─────────────────────────────
-# Keyed by (current_status, registration_mode) → set of allowed next statuses
-OPEN_TRANSITIONS: Dict[RSVPStatus, set] = {
+# Keyed by current_status → set of allowed next statuses
+OPEN_TRANSITIONS: Dict[RSVPStatus, Set[RSVPStatus]] = {
+    RSVPStatus.new: {RSVPStatus.registered},
     RSVPStatus.registered: {RSVPStatus.revoked},
 }
 
-SHORTLISTED_TRANSITIONS: Dict[RSVPStatus, set] = {
-    RSVPStatus.pending:  {RSVPStatus.approved, RSVPStatus.rejected},
+SHORTLISTED_TRANSITIONS: Dict[RSVPStatus, Set[RSVPStatus]] = {
+    RSVPStatus.new: {RSVPStatus.pending},
+    RSVPStatus.pending: {RSVPStatus.approved, RSVPStatus.rejected},
     RSVPStatus.approved: {RSVPStatus.revoked},
     RSVPStatus.rejected: set(),  # terminal
 }
@@ -38,6 +41,7 @@ SHORTLISTED_TRANSITIONS: Dict[RSVPStatus, set] = {
 class SyncStatus(str, Enum):
     """Tracks whether a registration has been synced to HubSpot."""
     not_synced = "not_synced"
+    pending = "pending"
     synced = "synced"
     failed = "failed"
 
@@ -51,12 +55,15 @@ class Registration(Document):
     organizer_id: str               # organizer who owns the event — denormalized for fast queries
     attendee_email: str
     attendee_name: str
+    attendee_phone: Optional[str] = None
     status: RSVPStatus = RSVPStatus.pending
+    registration_mode_snapshot: Optional[RegistrationMode] = None
     custom_fields: Optional[Dict[str, Any]] = None   # free-form metadata from registration form
 
     # ── Integration tracking ──
     sync_status: SyncStatus = SyncStatus.not_synced
     hubspot_contact_id: Optional[str] = None
+    hubspot_last_synced_at: Optional[datetime] = None
 
     # ── Timestamps ──
     created_at: datetime = Field(default_factory=datetime.utcnow)
