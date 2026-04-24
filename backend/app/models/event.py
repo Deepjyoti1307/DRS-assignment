@@ -34,6 +34,7 @@ class Event(Document):
     status: EventStatus = EventStatus.draft
     template_used: Optional[str] = None
     slug: Optional[str] = None
+    image_url: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

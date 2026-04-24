@@ -158,7 +158,7 @@ function EventCard({ event }: { event: Event }) {
 
       <div className="flex items-center gap-2 pt-1">
         <Link
-          href={`/dashboard/events/${event.id}/edit`}
+          href={`/dashboard/events/${event._id || event.id}/edit`}
           className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors"
         >
           <Pencil className="w-3.5 h-3.5" /> Edit
@@ -173,8 +173,8 @@ function EventCard({ event }: { event: Event }) {
           </Link>
         )}
         <Link
-          href={`/dashboard/events/${event.id}/attendees`}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors"
+          href={`/dashboard/events/${event._id || event.id}/attendees`}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-lime/10 text-lime hover:bg-lime/20 transition-colors ml-auto"
         >
           <Users className="w-3.5 h-3.5" /> Attendees
         </Link>
@@ -467,7 +467,7 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event._id || event.id} event={event} />
           ))}
         </div>
       )}

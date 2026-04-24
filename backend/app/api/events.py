@@ -28,6 +28,7 @@ class EventCreate(BaseModel):
     capacity: int = Field(..., ge=1)
     registration_mode: RegistrationMode
     template_used: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 class EventUpdate(BaseModel):
@@ -39,6 +40,7 @@ class EventUpdate(BaseModel):
     capacity: Optional[int] = Field(None, ge=1)
     registration_mode: Optional[RegistrationMode] = None
     template_used: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 @router.get("")
