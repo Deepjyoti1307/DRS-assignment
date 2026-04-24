@@ -38,13 +38,13 @@ async def _send_email(
     if not settings.smtp_host or not settings.smtp_user:
         logger.warning(f"SMTP not configured. Email to {to_email} skipped. Subject: {subject}")
         log = EmailLog(
-            to_email=to_email,
+            registration_id=registration_id or "unknown",
+            attendee_email=to_email,
+            trigger=trigger,
             subject=subject,
             body=body_text,
-            event_id=event_id,
-            registration_id=registration_id,
-            status="skipped",
-            trigger=trigger
+            template=body_html or "plaintext",
+            status="skipped"
         )
         await log.insert()
         return
@@ -69,14 +69,14 @@ async def _send_email(
 
     # Persist log
     log = EmailLog(
-        to_email=to_email,
+        registration_id=registration_id or "unknown",
+        attendee_email=to_email,
+        trigger=trigger,
         subject=subject,
-        body=body_html or body_text,
-        event_id=event_id,
-        registration_id=registration_id,
+        body=body_text,
+        template=body_html or "plaintext",
         status=status,
-        error_message=error_msg,
-        trigger=trigger
+        error_message=error_msg
     )
     await log.insert()
 
