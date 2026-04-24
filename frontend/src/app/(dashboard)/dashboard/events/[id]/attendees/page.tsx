@@ -25,7 +25,9 @@ import {
   approveRegistration, 
   rejectRegistration, 
   revokeRegistration,
-  fetchEvent 
+  checkInRegistration,
+  fetchEvent,
+  fetchSettings
 } from "@/lib/api";
 import type { Registration, Event, RSVPStatus } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,10 +47,18 @@ export default function EventAttendeesPage() {
   const [selectedAttendee, setSelectedAttendee] = useState<Registration | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [hasHubspot, setHasHubspot] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const pageSize = 25;
+
+  useEffect(() => {
+    setPage(0);
+  }, [id, filterStatus]);
 
   useEffect(() => {
     loadData();
-  }, [id, filterStatus]);
+  }, [id, filterStatus, page]);
 
   async function loadData() {
     try {
@@ -56,13 +66,22 @@ export default function EventAttendeesPage() {
       const token = await getToken();
       if (!token) return;
 
-      const [eventData, attendeeData] = await Promise.all([
+      const [eventData, attendeeData, settings] = await Promise.all([
         fetchEvent(token, id),
-        fetchRegistrations(token, id, filterStatus === "all" ? undefined : filterStatus)
+        fetchRegistrations(
+          token,
+          id,
+          filterStatus === "all" ? undefined : filterStatus,
+          pageSize,
+          page * pageSize
+        ),
+        fetchSettings(token)
       ]);
 
       setEvent(eventData);
       setAttendees(attendeeData);
+      setHasNext(attendeeData.length === pageSize);
+      setHasHubspot(settings.has_hubspot_key);
       setError(null);
     } catch (err: any) {
       setError(err.message || "Failed to load attendees");
@@ -71,7 +90,10 @@ export default function EventAttendeesPage() {
     }
   }
 
-  const handleStatusUpdate = async (attendeeId: string, action: 'approve' | 'reject' | 'revoke') => {
+  const handleStatusUpdate = async (
+    attendeeId: string,
+    action: 'approve' | 'reject' | 'revoke' | 'check-in'
+  ) => {
     try {
       setActionLoading(attendeeId);
       const token = await getToken();
@@ -80,6 +102,7 @@ export default function EventAttendeesPage() {
       if (action === 'approve') await approveRegistration(token, attendeeId);
       else if (action === 'reject') await rejectRegistration(token, attendeeId);
       else if (action === 'revoke') await revokeRegistration(token, attendeeId);
+      else if (action === 'check-in') await checkInRegistration(token, attendeeId);
 
       loadData();
     } catch (err: any) {
@@ -195,6 +218,26 @@ export default function EventAttendeesPage() {
         ))}
       </div>
 
+      <div className="flex items-center justify-end gap-3">
+        <button
+          onClick={() => setPage(p => Math.max(p - 1, 0))}
+          disabled={page === 0}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          Page {page + 1}
+        </span>
+        <button
+          onClick={() => setPage(p => p + 1)}
+          disabled={!hasNext}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
+
       {/* Content Table */}
       <div className="glass-panel rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
         {loading && !attendees.length ? (
@@ -220,8 +263,9 @@ export default function EventAttendeesPage() {
             <thead>
               <tr className="bg-white/[0.02] text-[10px] uppercase tracking-widest text-muted-foreground font-black border-b border-white/5">
                 <th className="px-8 py-6">Attendee Identity</th>
+                <th className="px-8 py-6">Contact info</th>
                 <th className="px-8 py-6">RSVP Status</th>
-                <th className="px-8 py-6">HubSpot Sync</th>
+                {hasHubspot && <th className="px-8 py-6">HubSpot Sync</th>}
                 <th className="px-8 py-6">Timestamp</th>
                 <th className="px-8 py-6 text-right">Actions</th>
               </tr>
@@ -234,12 +278,19 @@ export default function EventAttendeesPage() {
                       <div className="w-12 h-12 rounded-2xl bg-lime/10 flex items-center justify-center text-sm font-black text-lime border border-lime/20">
                         {attendee.attendee_name.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <div className="font-bold text-white group-hover:text-lime transition-colors">{attendee.attendee_name}</div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1 font-mono">
-                          <Mail className="w-3 h-3 text-lime/30" /> {attendee.attendee_email}
-                        </div>
-                      </div>
+                      <div className="font-bold text-white group-hover:text-lime transition-colors">{attendee.attendee_name}</div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="flex flex-col gap-1 font-mono text-[10px] uppercase tracking-wider">
+                       <div className="flex items-center gap-2 text-white/60">
+                         <Mail className="w-3 h-3 text-lime/40" /> {attendee.attendee_email}
+                       </div>
+                       {attendee.attendee_phone && (
+                         <div className="flex items-center gap-2 text-white/40">
+                           <Users className="w-3 h-3 text-lime/20" /> {attendee.attendee_phone}
+                         </div>
+                       )}
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -247,18 +298,20 @@ export default function EventAttendeesPage() {
                       {attendee.status}
                     </span>
                   </td>
-                  <td className="px-8 py-6">
-                    <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
-                      attendee.sync_status === 'synced' ? 'text-emerald-400' : 
-                      attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${
-                        attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' : 
-                        attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
-                      }`} />
-                      {attendee.sync_status}
-                    </div>
-                  </td>
+                  {hasHubspot && (
+                    <td className="px-8 py-6">
+                      <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
+                        attendee.sync_status === 'synced' ? 'text-emerald-400' : 
+                        attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
+                      }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' : 
+                          attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
+                        }`} />
+                        {attendee.sync_status}
+                      </div>
+                    </td>
+                  )}
                   <td className="px-8 py-6 text-xs text-muted-foreground font-mono">
                     {format(new Date(attendee.created_at), "dd MMM, HH:mm")}
                   </td>
@@ -294,14 +347,24 @@ export default function EventAttendeesPage() {
                       )}
                       
                       {(attendee.status === "approved" || attendee.status === "registered") && (
-                        <button 
-                          onClick={() => handleStatusUpdate(attendee.id, 'revoke')}
-                          disabled={actionLoading === attendee.id}
-                          className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
-                          title="Revoke Access"
-                        >
-                          {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleStatusUpdate(attendee.id, 'check-in')}
+                            disabled={actionLoading === attendee.id}
+                            className="p-2.5 hover:bg-lime/10 rounded-xl text-lime/60 hover:text-lime transition-all border border-transparent hover:border-lime/20"
+                            title="Check In"
+                          >
+                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                          </button>
+                          <button 
+                            onClick={() => handleStatusUpdate(attendee.id, 'revoke')}
+                            disabled={actionLoading === attendee.id}
+                            className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
+                            title="Revoke Access"
+                          >
+                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </td>
@@ -355,6 +418,16 @@ export default function EventAttendeesPage() {
                 </div>
               </div>
 
+              {/* Internal Notes */}
+              <div className="mb-10">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                  <Search className="w-3 h-3 text-lime" /> Internal Notes
+                </h3>
+                <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl text-sm text-white/50 italic font-mono leading-relaxed">
+                  {selectedAttendee.notes || "No internal notes available for this attendee."}
+                </div>
+              </div>
+
               <div className="relative pl-8 space-y-10 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[1px] before:bg-white/10">
                 {selectedAttendee.status_history?.map((entry, idx) => (
                   <div key={idx} className="relative">
@@ -364,13 +437,25 @@ export default function EventAttendeesPage() {
                       : "bg-white/5 border-white/10"
                     }`} />
                     <div className="space-y-2">
-                      <p className="text-sm font-bold text-white uppercase tracking-widest">
-                        {entry.status}
-                      </p>
-                      <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      <div className="flex items-center gap-2">
+                        {entry.from_status && (
+                          <>
+                            <span className="text-[10px] text-muted-foreground line-through opacity-50 uppercase tracking-tighter">{entry.from_status}</span>
+                            <span className="text-[8px] text-lime">→</span>
+                          </>
+                        )}
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">
+                          {entry.to_status || entry.status}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3 h-3" />
                           {format(new Date(entry.changed_at), "dd MMM, HH:mm:ss")}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-lime/40">
+                           <Users className="w-3 h-3" />
+                           By: {entry.changed_by === 'attendee' ? 'System (Auto)' : 'Organizer'}
                         </div>
                       </div>
                     </div>

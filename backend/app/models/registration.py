@@ -21,20 +21,23 @@ class RSVPStatus(str, Enum):
     rejected = "rejected"     # organizer rejected          (shortlisted mode)
     registered = "registered" # auto-confirmed              (open mode)
     revoked = "revoked"       # organizer revoked access
+    checked_in = "checked_in"
 
 
 # ── Valid transition map ─────────────────────────────
 # Keyed by current_status → set of allowed next statuses
 OPEN_TRANSITIONS: Dict[RSVPStatus, Set[RSVPStatus]] = {
     RSVPStatus.new: {RSVPStatus.registered},
-    RSVPStatus.registered: {RSVPStatus.revoked},
+    RSVPStatus.registered: {RSVPStatus.revoked, RSVPStatus.checked_in},
+    RSVPStatus.checked_in: set(),
 }
 
 SHORTLISTED_TRANSITIONS: Dict[RSVPStatus, Set[RSVPStatus]] = {
     RSVPStatus.new: {RSVPStatus.pending},
     RSVPStatus.pending: {RSVPStatus.approved, RSVPStatus.rejected},
-    RSVPStatus.approved: {RSVPStatus.revoked},
+    RSVPStatus.approved: {RSVPStatus.revoked, RSVPStatus.checked_in},
     RSVPStatus.rejected: set(),  # terminal
+    RSVPStatus.checked_in: set(),
 }
 
 
@@ -48,8 +51,10 @@ class SyncStatus(str, Enum):
 
 class StatusHistoryItem(BaseModel):
     """Represents a single entry in the registration's audit trail."""
-    status: RSVPStatus
+    from_status: Optional[RSVPStatus] = None
+    to_status: RSVPStatus
     changed_at: datetime = Field(default_factory=datetime.utcnow)
+    changed_by: str = "system"  # User ID or "system"
     reason: Optional[str] = None
 
 
@@ -63,10 +68,14 @@ class Registration(Document):
     attendee_email: str
     attendee_name: str
     attendee_phone: Optional[str] = None
+    notes: Optional[str] = None
     status: RSVPStatus = RSVPStatus.pending
     status_history: list[StatusHistoryItem] = []
     registration_mode_snapshot: Optional[RegistrationMode] = None
     custom_fields: Optional[Dict[str, Any]] = None   # free-form metadata from registration form
+
+    # ── Check-in ──
+    checked_in_at: Optional[datetime] = None
 
     # ── Integration tracking ──
     sync_status: SyncStatus = SyncStatus.not_synced

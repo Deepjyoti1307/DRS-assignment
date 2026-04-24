@@ -9,6 +9,14 @@ class Settings(BaseSettings):
     database_url: str
     clerk_secret_key: str
     clerk_jwks_url: str = "https://bursting-halibut-38.clerk.accounts.dev/.well-known/jwks.json"
+    
+    # SMTP Settings
+    email_provider: str = "smtp"
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    from_email: str = ""
 
     class Config:
         env_file = ".env"

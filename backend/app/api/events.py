@@ -14,6 +14,7 @@ from app.services.event_service import (
     publish_event,
     update_event,
     cancel_event,
+    duplicate_event,
 )
 
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -84,3 +85,8 @@ async def publish_event_handler(event_id: str, user=Depends(get_current_user)):
 @router.patch("/{event_id}/cancel")
 async def cancel_event_handler(event_id: str, user=Depends(get_current_user)):
     return await cancel_event(event_id, user)
+
+
+@router.post("/{event_id}/duplicate")
+async def duplicate_event_handler(event_id: str, user=Depends(get_current_user)):
+    return await duplicate_event(event_id, user)

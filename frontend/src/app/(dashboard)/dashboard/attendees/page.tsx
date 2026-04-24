@@ -23,7 +23,8 @@ import {
   fetchAllRegistrations, 
   approveRegistration, 
   rejectRegistration, 
-  revokeRegistration 
+  revokeRegistration,
+  fetchSettings
 } from "@/lib/api";
 import type { Registration, RSVPStatus } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,10 +41,18 @@ export default function GlobalAttendeesPage() {
   const [selectedAttendee, setSelectedAttendee] = useState<Registration | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [hasHubspot, setHasHubspot] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const pageSize = 25;
+
+  useEffect(() => {
+    setPage(0);
+  }, [filterStatus]);
 
   useEffect(() => {
     loadData();
-  }, [filterStatus]);
+  }, [filterStatus, page]);
 
   async function loadData() {
     try {
@@ -51,8 +60,18 @@ export default function GlobalAttendeesPage() {
       const token = await getToken();
       if (!token) return;
 
-      const data = await fetchAllRegistrations(token, filterStatus === "all" ? undefined : filterStatus);
+      const [data, settings] = await Promise.all([
+        fetchAllRegistrations(
+          token,
+          filterStatus === "all" ? undefined : filterStatus,
+          pageSize,
+          page * pageSize
+        ),
+        fetchSettings(token)
+      ]);
       setAttendees(data);
+      setHasNext(data.length === pageSize);
+      setHasHubspot(settings.has_hubspot_key);
       setError(null);
     } catch (err: any) {
       setError(err.message || "Failed to load attendees");
@@ -178,6 +197,26 @@ export default function GlobalAttendeesPage() {
         ))}
       </div>
 
+      <div className="flex items-center justify-end gap-3">
+        <button
+          onClick={() => setPage(p => Math.max(p - 1, 0))}
+          disabled={page === 0}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          Page {page + 1}
+        </span>
+        <button
+          onClick={() => setPage(p => p + 1)}
+          disabled={!hasNext}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
+
       {/* Content */}
       <div className="glass-panel rounded-3xl overflow-hidden min-h-[400px]">
         {loading && !attendees.length ? (
@@ -205,7 +244,7 @@ export default function GlobalAttendeesPage() {
               <tr className="bg-white/[0.02] text-[11px] uppercase tracking-widest text-muted-foreground font-bold border-b border-white/5">
                 <th className="px-8 py-5">Attendee Identity</th>
                 <th className="px-8 py-5">Status</th>
-                <th className="px-8 py-5">Sync State</th>
+                {hasHubspot && <th className="px-8 py-5">Sync State</th>}
                 <th className="px-8 py-5">Timestamp</th>
                 <th className="px-8 py-5 text-right">Directives</th>
               </tr>
@@ -231,18 +270,20 @@ export default function GlobalAttendeesPage() {
                       {attendee.status}
                     </span>
                   </td>
-                  <td className="px-8 py-6">
-                    <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
-                      attendee.sync_status === 'synced' ? 'text-emerald-400' : 
-                      attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${
-                        attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 
-                        attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
-                      }`} />
-                      {attendee.sync_status}
-                    </div>
-                  </td>
+                  {hasHubspot && (
+                    <td className="px-8 py-6">
+                      <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
+                        attendee.sync_status === 'synced' ? 'text-emerald-400' : 
+                        attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
+                      }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 
+                          attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
+                        }`} />
+                        {attendee.sync_status}
+                      </div>
+                    </td>
+                  )}
                   <td className="px-8 py-6 text-xs text-muted-foreground font-mono">
                     {format(new Date(attendee.created_at), "dd/MM/yyyy HH:mm")}
                   </td>
@@ -346,10 +387,12 @@ export default function GlobalAttendeesPage() {
                       {selectedAttendee.status}
                     </span>
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">HubSpot Sync</p>
-                    <p className="text-xs font-bold text-white">{selectedAttendee.sync_status.toUpperCase()}</p>
-                  </div>
+                  {hasHubspot && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">HubSpot Sync</p>
+                      <p className="text-xs font-bold text-white">{selectedAttendee.sync_status.toUpperCase()}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

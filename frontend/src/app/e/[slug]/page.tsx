@@ -85,6 +85,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
   const eventDate = new Date(event.date_time);
   
   const isRegistrationOpen = availability.state === "open";
+  const requiresPhone = availability.requires_phone === true;
   const statusColors = {
     open: "text-lime bg-lime/10 border-lime/20",
     full: "text-orange-400 bg-orange-400/10 border-orange-400/20",
@@ -283,14 +284,22 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Phone Number</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">
+                      Phone Number{requiresPhone ? " (required)" : ""}
+                    </label>
                     <input
                       type="tel"
+                      required={requiresPhone}
                       value={formData.phone}
                       onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
                       className="w-full bg-[#1a1e0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-lime/50 transition-all placeholder:text-white/20"
                       placeholder="+1 (555) 000-0000"
                     />
+                    {requiresPhone && (
+                      <p className="text-[10px] text-white/40 mt-2">
+                        Phone is required for organizer CRM sync.
+                      </p>
+                    )}
                   </div>
 
                   {regStatus === "error" && (

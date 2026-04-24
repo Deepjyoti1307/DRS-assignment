@@ -23,6 +23,7 @@ from app.services.registration_service import (
     list_all_registrations,
     update_registration_status,
     get_audit_logs,
+    sync_registration_to_hubspot,
 )
 
 router = APIRouter(tags=["registrations"])
@@ -57,6 +58,7 @@ async def register(event_id: str, payload: RegistrationCreate):
         event_id=event_id,
         attendee_email=payload.attendee_email,
         attendee_name=payload.attendee_name,
+        attendee_phone=payload.attendee_phone,
         custom_fields=payload.custom_fields,
     )
     return registration
@@ -70,6 +72,8 @@ async def register(event_id: str, payload: RegistrationCreate):
 async def get_registrations(
     event_id: str,
     status: Optional[RSVPStatus] = Query(None, description="Filter by RSVP status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     user=Depends(get_current_user),
 ):
     """
@@ -77,19 +81,21 @@ async def get_registrations(
     Only the organizer who owns the event can access this.
     """
     organizer_id = user.get("sub") or user.get("user_id")
-    return await list_registrations(event_id, organizer_id, status)
+    return await list_registrations(event_id, organizer_id, status, limit, offset)
 
 
 @router.get("/api/registrations")
 async def get_all_registrations(
     status: Optional[RSVPStatus] = Query(None, description="Filter by RSVP status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     user=Depends(get_current_user),
 ):
     """
     List all registrations across all events for the current organizer.
     """
     organizer_id = user.get("sub") or user.get("user_id")
-    return await list_all_registrations(organizer_id, status)
+    return await list_all_registrations(organizer_id, status, limit, offset)
 
 
 @router.get("/api/registrations/audit")
@@ -132,3 +138,19 @@ async def revoke_registration(registration_id: str, user=Depends(get_current_use
         target_status=RSVPStatus.revoked,
         organizer_id=organizer_id,
     )
+
+
+@router.patch("/api/registrations/{registration_id}/check-in")
+async def check_in_registration(registration_id: str, user=Depends(get_current_user)):
+    organizer_id = user.get("sub") or user.get("user_id")
+    return await update_registration_status(
+        registration_id=registration_id,
+        target_status=RSVPStatus.checked_in,
+        organizer_id=organizer_id,
+    )
+
+
+@router.post("/api/registrations/{registration_id}/sync-hubspot")
+async def retry_hubspot_sync(registration_id: str, user=Depends(get_current_user)):
+    organizer_id = user.get("sub") or user.get("user_id")
+    return await sync_registration_to_hubspot(registration_id, organizer_id)

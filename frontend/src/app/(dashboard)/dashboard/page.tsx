@@ -25,7 +25,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { fetchEvents } from "@/lib/api";
+import { fetchEvents, duplicateEvent } from "@/lib/api";
 import type { Event, EventStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { EventCardSkeleton, StatCardSkeleton } from "@/components/dashboard/Skeletons";
@@ -116,7 +116,7 @@ function CapacityBar({ registered, capacity }: { registered: number; capacity: n
 
 // ─── Event Card ───────────────────────────────────────────────────────
 
-function EventCard({ event }: { event: Event }) {
+function EventCard({ event, onDuplicate }: { event: Event; onDuplicate: (id: string) => void }) {
   const date = new Date(event.date_time);
   const isPast = date < new Date();
 
@@ -154,7 +154,7 @@ function EventCard({ event }: { event: Event }) {
         </div>
       </div>
 
-      <CapacityBar registered={0} capacity={event.capacity} />
+      <CapacityBar registered={event.registrations_count || 0} capacity={event.capacity} />
 
       <div className="flex items-center gap-2 pt-1">
         <Link
@@ -179,6 +179,7 @@ function EventCard({ event }: { event: Event }) {
           <Users className="w-3.5 h-3.5" /> Attendees
         </Link>
         <button
+          onClick={() => onDuplicate(event._id || event.id || "")}
           className="ml-auto p-2 text-xs rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
           title="Duplicate event"
         >
@@ -223,6 +224,19 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }, [getToken, activeFilter]);
+
+  const handleDuplicate = async (eventId: string) => {
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+      await duplicateEvent(token, eventId);
+      // toast.success("Event duplicated as draft!");
+      loadEvents();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to duplicate event: " + (err as Error).message);
+    }
+  };
 
   useEffect(() => {
     loadEvents();
@@ -467,7 +481,11 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {events.map((event) => (
-            <EventCard key={event._id || event.id} event={event} />
+            <EventCard 
+              key={event._id || event.id} 
+              event={event} 
+              onDuplicate={handleDuplicate}
+            />
           ))}
         </div>
       )}

@@ -23,16 +23,20 @@ class EventStatus(str, Enum):
 
 
 class Event(Document):
-    organizer_id: str
+    """
+    Represents an event created by an organizer.
+    """
+    organizer_id: str               # link to Organizer.clerk_user_id
     title: str
     description: str
     date_time: datetime
     mode: EventMode
-    venue: str
+    venue: str                      # Physical address or "Online"
     capacity: int
-    registration_mode: RegistrationMode
-    status: EventStatus = EventStatus.draft
+    registrations_count: int = 0    # Tracks approved/registered attendees for atomic checks
+    registration_mode: RegistrationMode = RegistrationMode.open
     template_used: Optional[str] = None
+    status: EventStatus = EventStatus.draft
     slug: Optional[str] = None
     image_url: Optional[str] = None
     location_lat: Optional[float] = None

@@ -1,23 +1,13 @@
-"""
-HubSpot Integration Service
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Non-blocking sync hooks for registration lifecycle events.
-Isolated from core flow — if HubSpot is down or unconfigured, registrations still work.
-
-Replace the stub methods with real HubSpot API calls when ready.
-"""
-
 import asyncio
 import logging
+import httpx
 from datetime import datetime
 from typing import Optional
-
 from beanie import PydanticObjectId
+from tenacity import retry, stop_after_attempt, wait_exponential
+from app.models.registration import Registration, SyncStatus
 
 logger = logging.getLogger(__name__)
-
-
-# ── Non-blocking wrapper (same pattern as email_service) ──
 
 def _fire_and_forget(coro):
     """Schedule background work. Failures are logged, never raised."""
@@ -33,107 +23,90 @@ def _fire_and_forget(coro):
     except RuntimeError:
         logger.warning("[HUBSPOT] No running event loop — skipping sync")
 
-
-# ── HubSpot API stubs ───────────────────────────────
-
-import httpx
-
-async def _upsert_hubspot_contact(
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    reraise=True
+)
+async def _perform_hubspot_upsert(
+    registration_id: str,
     api_key: str,
     email: str,
     name: str,
     event_title: str,
     status: str,
-) -> Optional[str]:
+):
     """
-    Search for a contact by email. If found, update it. If not, create it.
-    Returns the HubSpot contact ID on success, None on failure.
+    HubSpot upsert via search + create/update (v3 API does not support /upsert).
     """
+    base = "https://api.hubapi.com/crm/v3/objects/contacts"
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
-    
-    # Split name into first/last
-    name_parts = name.split()
-    first_name = name_parts[0] if name_parts else ""
-    last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
+    first = name.split(" ")[0] if " " in name else name
+    last = " ".join(name.split(" ")[1:]) if " " in name else ""
+    properties = {
+        "email": email,
+        "firstname": first,
+        "lastname": last,
+        "event_name": event_title,
+        "rsvp_status": status,
+        "rsvp_timestamp": datetime.utcnow().isoformat(),
+    }
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            # 1. Search for contact
-            search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
-            search_payload = {
-                "filterGroups": [
-                    {
-                        "filters": [
-                            {
-                                "propertyName": "email",
-                                "operator": "EQ",
-                                "value": email
-                            }
-                        ]
-                    }
-                ]
-            }
-            
-            search_resp = await client.post(search_url, headers=headers, json=search_payload)
-            search_data = search_resp.json()
-            
-            contact_id = None
-            if search_resp.status_code == 200 and search_data.get("total", 0) > 0:
-                contact_id = search_data["results"][0]["id"]
+        # 1) Search by email
+        search_url = f"{base}/search"
+        search_payload = {
+            "filterGroups": [
+                {
+                    "filters": [
+                        {
+                            "propertyName": "email",
+                            "operator": "EQ",
+                            "value": email,
+                        }
+                    ]
+                }
+            ]
+        }
+        search_resp = await client.post(search_url, headers=headers, json=search_payload)
 
-            properties = {
-                "email": email,
-                "firstname": first_name,
-                "lastname": last_name,
-                "last_event_registered": event_title,
-                "registration_status": status,
-            }
+        contact_id = None
+        if search_resp.is_success:
+            data = search_resp.json()
+            if data.get("total", 0) > 0:
+                contact_id = data["results"][0]["id"]
+        else:
+            logger.error(f"[HUBSPOT] Search error: {search_resp.status_code} - {search_resp.text}")
+            search_resp.raise_for_status()
 
-            if contact_id:
-                # 2. Update existing
-                update_url = f"https://api.hubapi.com/crm/v3/objects/contacts/{contact_id}"
-                await client.patch(update_url, headers=headers, json={"properties": properties})
-                return contact_id
-            else:
-                # 3. Create new
-                create_url = "https://api.hubapi.com/crm/v3/objects/contacts"
-                create_resp = await client.post(create_url, headers=headers, json={"properties": properties})
-                if create_resp.status_code in (201, 200):
-                    return create_resp.json().get("id")
-                
-            return None
-        except Exception as e:
-            logger.error(f"[HUBSPOT] API Error: {str(e)}")
-            return None
+        # 2) Create or update
+        if contact_id:
+            update_url = f"{base}/{contact_id}"
+            resp = await client.patch(update_url, headers=headers, json={"properties": properties})
+        else:
+            create_url = base
+            resp = await client.post(create_url, headers=headers, json={"properties": properties})
 
+        reg = await Registration.get(PydanticObjectId(registration_id))
+        if not reg:
+            return
 
-# ── Sync status updater ─────────────────────────────
-
-async def _update_sync_status(
-    registration_id: str,
-    hubspot_contact_id: Optional[str],
-) -> None:
-    """Update the registration's sync tracking fields."""
-    from app.models.registration import Registration, SyncStatus
-
-    reg = await Registration.get(PydanticObjectId(registration_id))
-    if not reg:
-        return
-
-    if hubspot_contact_id:
-        reg.sync_status = SyncStatus.synced
-        reg.hubspot_contact_id = hubspot_contact_id
-    else:
-        reg.sync_status = SyncStatus.failed
-
-    reg.updated_at = datetime.utcnow()
-    await reg.save()
-
-
-# ── Internal sync orchestrator ───────────────────────
+        if resp.is_success:
+            data = resp.json()
+            reg.sync_status = SyncStatus.synced
+            reg.hubspot_contact_id = data.get("id") or contact_id
+            reg.hubspot_last_synced_at = datetime.utcnow()
+            await reg.save()
+            logger.info(f"[HUBSPOT] Successfully synced {email} for event {event_title}")
+        else:
+            reg.sync_status = SyncStatus.failed
+            await reg.save()
+            logger.error(f"[HUBSPOT] API Error: {resp.status_code} - {resp.text}")
+            resp.raise_for_status()
 
 async def _sync_registration_to_hubspot(
     registration_id: str,
@@ -143,29 +116,27 @@ async def _sync_registration_to_hubspot(
     event_title: str,
     status: str,
 ) -> None:
-    """
-    Full sync flow:
-    1. Check if organizer has a HubSpot API key configured.
-    2. Upsert the contact in HubSpot.
-    3. Update the registration's sync_status accordingly.
-    """
     if not organizer_hubspot_key:
-        logger.debug(f"[HUBSPOT] Organizer has no HubSpot key — skipping sync for {registration_id}")
         return
 
-    contact_id = await _upsert_hubspot_contact(
-        api_key=organizer_hubspot_key,
-        email=attendee_email,
-        name=attendee_name,
-        event_title=event_title,
-        status=status,
-    )
-    await _update_sync_status(registration_id, contact_id)
+    # Update status to pending before starting
+    reg = await Registration.get(PydanticObjectId(registration_id))
+    if reg:
+        reg.sync_status = SyncStatus.pending
+        await reg.save()
 
-
-# ═══════════════════════════════════════════════════════
-#  Public triggers — called from registration_service
-# ═══════════════════════════════════════════════════════
+    try:
+        await _perform_hubspot_upsert(
+            registration_id=registration_id,
+            api_key=organizer_hubspot_key,
+            email=attendee_email,
+            name=attendee_name,
+            event_title=event_title,
+            status=status,
+        )
+    except Exception as e:
+        logger.error(f"[HUBSPOT] Final failure after retries for {attendee_email}: {str(e)}")
+        # Status is already set to failed in _perform_hubspot_upsert try/except or the last attempt
 
 def trigger_hubspot_sync(
     registration_id: str,
@@ -175,10 +146,6 @@ def trigger_hubspot_sync(
     event_title: str,
     status: str,
 ) -> None:
-    """
-    Fire-and-forget HubSpot sync after any registration status change.
-    Safe to call even if organizer has no HubSpot key — it will no-op.
-    """
     _fire_and_forget(
         _sync_registration_to_hubspot(
             registration_id=registration_id,

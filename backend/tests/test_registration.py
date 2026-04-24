@@ -35,9 +35,15 @@ from fastapi import HTTPException
 
 
 import pytest_asyncio
+from unittest.mock import patch
 
 
 # ── Fixtures ─────────────────────────────────────────
+
+@pytest.fixture(autouse=True)
+def mock_email():
+    with patch("app.services.email_service._send_smtp_sync") as mock:
+        yield mock
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def init_db():
