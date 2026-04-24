@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     database_url: str
     clerk_secret_key: str
-    clerk_jwks_url: str = "https://api.clerk.com/v1/jwks"
+    clerk_jwks_url: str = "https://bursting-halibut-38.clerk.accounts.dev/.well-known/jwks.json"
 
     class Config:
         env_file = ".env"

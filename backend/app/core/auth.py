@@ -31,7 +31,8 @@ def verify_clerk_token(credentials: HTTPAuthorizationCredentials = Security(secu
             options={"verify_aud": False},
         )
         return decoded
-    except Exception:
+    except Exception as e:
+        print(f"JWT Verification Error: {e}")
         raise HTTPException(
             status_code=401,
             detail="Invalid authentication credentials"
