@@ -24,7 +24,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Animated Mesh Gradient */}
         <div className="absolute inset-0 gradient-mesh animate-mesh opacity-60" />
-        
+
         {/* Floating Orbs - Increased Intensity */}
         <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-lime/20 rounded-full blur-[120px] animate-float" />
         <div className="absolute bottom-[20%] right-[10%] w-[600px] h-[600px] bg-lime/15 rounded-full blur-[150px] animate-float" style={{ animationDelay: '2s' }} />
@@ -79,9 +79,9 @@ export default function HeroSection() {
               className="relative group-hover:translate-x-1 transition-transform"
             />
           </Link>
-          
-          <Link 
-            href="https://youtu.be/F23bOWlS1_k" 
+
+          <Link
+            href="https://drive.google.com/file/d/1twQOOdjRpzCouXeKqMRb57VH1MFwnwlR/view?usp=drive_link"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center justify-center gap-4 px-10 h-[72px] min-w-[280px] rounded-full border border-white/10 bg-white/5 text-white font-mono font-bold text-sm uppercase tracking-[0.2em] backdrop-blur-xl transition-all duration-500 hover:bg-white/10 hover:border-white/20"
