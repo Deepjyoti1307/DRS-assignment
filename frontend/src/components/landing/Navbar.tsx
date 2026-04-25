@@ -61,7 +61,6 @@ export default function Navbar() {
               {[
                 { label: "Explore", href: "#explore" },
                 { label: "Features", href: "#features" },
-                { label: "Pricing", href: "#pricing" },
                 { label: "Dashboard", href: "/dashboard" },
               ].map((link) => (
                 <Link

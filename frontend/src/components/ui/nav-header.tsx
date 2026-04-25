@@ -18,7 +18,6 @@ export default function NavHeader() {
     >
       <Tab setPosition={setPosition} href="#explore">Explore</Tab>
       <Tab setPosition={setPosition} href="#features">Features</Tab>
-      <Tab setPosition={setPosition} href="#pricing">Pricing</Tab>
 
       <Cursor position={position} />
     </ul>

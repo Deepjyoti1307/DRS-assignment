@@ -10,7 +10,6 @@ const FOOTER_LINKS = {
   Product: [
     { label: "Features", href: "#features" },
     { label: "Integrations", href: "#" },
-    { label: "Pricing", href: "#pricing" },
   ],
   Company: [
     { label: "About Us", href: "#" },
