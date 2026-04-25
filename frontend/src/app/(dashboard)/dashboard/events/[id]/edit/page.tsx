@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { fetchEvent, updateEvent, publishEvent, deleteEvent } from "@/lib/api";
+import { fetchEvent, updateEvent, publishEvent, deleteEvent, uploadFile, API_BASE_URL } from "@/lib/api";
 import { Event } from "@/lib/types";
-import { ArrowLeft, CheckCircle2, Clock, Image as ImageIcon, Send, MapPin } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Image as ImageIcon, Send, MapPin, Upload, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -33,9 +33,30 @@ export default function EventEditor({ params }: { params: { id: string } }) {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Track if changes were made since last save
   const isDirty = useRef(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const token = await getToken();
+      if (!token) throw new Error("No token");
+
+      const { url } = await uploadFile(token, file);
+      setFormData(prev => ({ ...prev, image_url: url }));
+      isDirty.current = true;
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Fetch initial data
   useEffect(() => {
@@ -277,30 +298,61 @@ export default function EventEditor({ params }: { params: { id: string } }) {
           <div className="glass-panel rounded-2xl p-6 md:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-heading font-bold text-white mb-1">Cover Image</h2>
-              <p className="text-sm text-muted-foreground mb-6">Provide a URL for the event cover image.</p>
+              <p className="text-sm text-muted-foreground mb-6">Upload a high-quality image for the event banner.</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-2">Image URL</label>
-              <div className="flex gap-4">
-                <div className="flex-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <ImageIcon className="w-5 h-5 text-white/40" />
+            <div className="space-y-4">
+              <div 
+                className={cn(
+                  "relative group cursor-pointer border-2 border-dashed rounded-2xl transition-all duration-300 min-h-[200px] flex flex-col items-center justify-center p-8",
+                  isUploading ? "border-lime/50 bg-lime/5" : "border-white/10 hover:border-lime/30 hover:bg-white/[0.02]"
+                )}
+                onClick={() => document.getElementById('cover-upload')?.click()}
+              >
+                <input
+                  id="cover-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                
+                {isUploading ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-8 h-8 text-lime animate-spin" />
+                    <p className="text-sm font-bold text-lime animate-pulse">Uploading asset...</p>
                   </div>
-                  <input
-                    type="url"
-                    name="image_url"
-                    value={formData.image_url || ""}
-                    onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-lime/50 focus:ring-1 focus:ring-lime/50 transition-all placeholder:text-white/20"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
+                ) : formData.image_url ? (
+                  <div className="absolute inset-0 rounded-2xl overflow-hidden group">
+                    <img 
+                      src={formData.image_url.startsWith('http') ? formData.image_url : `${API_BASE_URL}${formData.image_url}`} 
+                      alt="Cover Preview" 
+                      className="w-full h-full object-cover" 
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
+                      <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+                        <Upload className="w-5 h-5 text-white" />
+                      </div>
+                      <p className="text-sm font-bold text-white">Click to Replace Image</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                      <ImageIcon className="w-8 h-8 text-white/40 group-hover:text-lime transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-base font-bold text-white mb-1">Click to upload cover</p>
+                      <p className="text-sm text-muted-foreground">PNG, JPG or WebP (max 5MB)</p>
+                    </div>
+                  </div>
+                )}
               </div>
+
               {formData.image_url && (
-                <div className="mt-4 rounded-xl overflow-hidden border border-white/10 relative h-48 bg-black/50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={formData.image_url} alt="Cover Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <ImageIcon className="w-3 h-3" />
+                  <span className="truncate max-w-md">Asset Location: {formData.image_url}</span>
                 </div>
               )}
             </div>

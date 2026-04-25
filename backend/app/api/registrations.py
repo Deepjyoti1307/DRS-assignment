@@ -110,6 +110,16 @@ async def get_all_audit_logs(
     return await get_audit_logs(organizer_id, limit)
 
 
+@router.patch("/api/registrations/{registration_id}/shortlist")
+async def shortlist_registration(registration_id: str, user=Depends(get_current_user)):
+    organizer_id = user.get("sub") or user.get("user_id")
+    return await update_registration_status(
+        registration_id=registration_id,
+        target_status=RSVPStatus.shortlisted,
+        organizer_id=organizer_id,
+    )
+
+
 @router.patch("/api/registrations/{registration_id}/approve")
 async def approve_registration(registration_id: str, user=Depends(get_current_user)):
     organizer_id = user.get("sub") or user.get("user_id")

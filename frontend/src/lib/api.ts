@@ -4,14 +4,14 @@
  */
 
 const envUrl = process.env.NEXT_PUBLIC_API_URL;
-const BASE_URL = (envUrl ? envUrl.replace(/\/$/, "") : "http://localhost:8000");
+export const API_BASE_URL = (envUrl ? envUrl.replace(/\/$/, "") : "http://localhost:8000");
 
 async function apiFetch<T>(
   path: string,
   token: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -136,6 +136,15 @@ export async function fetchAuditLogs(
   return apiFetch<any[]>(`/api/registrations/audit?limit=${limit}`, token);
 }
 
+export async function shortlistRegistration(
+  token: string,
+  id: string
+): Promise<Registration> {
+  return apiFetch<Registration>(`/api/registrations/${id}/shortlist`, token, {
+    method: "PATCH",
+  });
+}
+
 export async function approveRegistration(
   token: string,
   id: string
@@ -172,6 +181,28 @@ export async function checkInRegistration(
   });
 }
 
+// ─── Utilities ─────────────────────────────────────────────────────────
+
+export async function uploadFile(token: string, file: File): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: "Upload failed" }));
+    throw new Error(body.detail || "Upload failed");
+  }
+
+  return res.json();
+}
+
 // ─── Public ────────────────────────────────────────────────────────────
 
 export interface PublicEventResponse {
@@ -186,7 +217,7 @@ export interface PublicEventResponse {
 }
 
 export async function fetchPublicEvent(slug: string): Promise<PublicEventResponse> {
-  const res = await fetch(`${BASE_URL}/e/${slug}`);
+  const res = await fetch(`${API_BASE_URL}/e/${slug}`);
   if (!res.ok) {
     throw new Error("Event not found");
   }
@@ -198,7 +229,7 @@ export async function registerForEvent(eventId: string, payload: {
   attendee_email: string;
   attendee_phone?: string;
 }): Promise<Registration> {
-  const res = await fetch(`${BASE_URL}/api/events/${eventId}/register`, {
+  const res = await fetch(`${API_BASE_URL}/api/events/${eventId}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

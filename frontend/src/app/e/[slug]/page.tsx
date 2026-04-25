@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchPublicEvent, PublicEventResponse, registerForEvent } from "@/lib/api";
+import { fetchPublicEvent, PublicEventResponse, registerForEvent, API_BASE_URL } from "@/lib/api";
 import { Calendar, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -100,9 +100,22 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1105] text-white selection:bg-lime selection:text-[#0f1105]">
+    <div className="min-h-screen bg-[#0f1105] text-white selection:bg-lime selection:text-[#0f1105] relative overflow-hidden">
+      {/* ── Background Image Enhancement ── */}
+      {event.image_url && (
+        <div className="absolute top-0 left-0 w-full h-[800px] pointer-events-none z-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src={event.image_url.startsWith('http') ? event.image_url : `${API_BASE_URL}${event.image_url}`} 
+            alt="" 
+            className="w-full h-full object-cover opacity-[0.15] blur-[100px] scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f1105]/80 to-[#0f1105]"></div>
+        </div>
+      )}
+
       {/* ── Navbar ── */}
-      <nav className="border-b border-white/5">
+      <nav className="border-b border-white/5 relative z-10">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="font-heading font-bold text-xl flex items-center gap-2 text-lime">
             Eventic
@@ -118,7 +131,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 md:py-20">
+      <main className="max-w-7xl mx-auto px-6 py-12 md:py-20 relative z-10">
 
         {/* ── Top Section ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24">
@@ -223,7 +236,11 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
             {event.image_url ? (
               <div className="rounded-2xl overflow-hidden border border-white/5 h-[300px] relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
+                <img 
+                  src={event.image_url.startsWith('http') ? event.image_url : `${API_BASE_URL}${event.image_url}`} 
+                  alt={event.title} 
+                  className="w-full h-full object-cover" 
+                />
               </div>
             ) : (
               <div className="rounded-2xl bg-white/5 border border-white/5 h-[300px] flex items-center justify-center">

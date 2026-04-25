@@ -108,31 +108,58 @@ def get_base_template(content_html: str, preview_text: str = "") -> str:
 def get_registration_template(event_title: str, attendee_name: str, status: str, venue: str, date: str) -> str:
     status_colors = {
         "PENDING": "#f59e0b",
+        "SHORTLISTED": "#3b82f6",
         "APPROVED": "#10b981",
         "REGISTERED": "#c1d949",
         "REJECTED": "#ef4444",
         "REVOKED": "#6b7280"
     }
+    status_icons = {
+        "PENDING": "⏳",
+        "SHORTLISTED": "📋",
+        "APPROVED": "✅",
+        "REGISTERED": "🎟️",
+        "REJECTED": "❌",
+        "REVOKED": "🚫"
+    }
     color = status_colors.get(status.upper(), "#c1d949")
+    icon = status_icons.get(status.upper(), "ℹ️")
     
     content = f"""
-    <h2>Registration Update</h2>
+    <div style="text-align: center; margin-bottom: 30px;">
+        <div style="font-size: 48px; margin-bottom: 10px;">{icon}</div>
+        <h2 style="margin-bottom: 5px;">Registration Update</h2>
+        <p style="color: #9ca3af; font-size: 14px;">Your journey with {event_title} starts here.</p>
+    </div>
+
     <p>Hi <strong>{attendee_name}</strong>,</p>
-    <p>Your registration status for <strong>{event_title}</strong> has been updated to:</p>
+    <p>We've processed your registration request. Your current status for <strong>{event_title}</strong> is now:</p>
     
-    <div style="display: inline-block; padding: 6px 12px; background-color: {color}22; color: {color}; border-radius: 8px; font-weight: 700; font-size: 14px; margin-bottom: 20px;">
-        {status.upper()}
+    <div style="text-align: center; margin: 30px 0;">
+        <div style="display: inline-block; padding: 12px 32px; background-color: {color}22; color: {color}; border: 1px solid {color}44; border-radius: 12px; font-weight: 800; font-size: 18px; letter-spacing: 1px;">
+            {status.upper()}
+        </div>
     </div>
     
     <div class="meta-box">
-        <div class="meta-item"><span class="meta-label">Event:</span> {event_title}</div>
-        <div class="meta-item"><span class="meta-label">Date:</span> {date}</div>
-        <div class="meta-item"><span class="meta-label">Location:</span> {venue}</div>
+        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #ffffff;">Event Intelligence</h3>
+        <div style="height: 1px; background: #ffffff11; margin: 15px 0;"></div>
+        <div class="meta-item"><span class="meta-label">EVENT:</span> {event_title}</div>
+        <div class="meta-item"><span class="meta-label">SCHEDULE:</span> {date}</div>
+        <div class="meta-item"><span class="meta-label">VENUE:</span> {venue}</div>
     </div>
     
-    <p>Please keep this email for your records. If you have any questions, contact the event organizer.</p>
+    <p style="font-size: 14px; color: #9ca3af; line-height: 1.8;">
+        This is an automated notification from the Eventic Orchestration System. 
+        Please ensure you have your registration details ready upon arrival. 
+        If your status is <strong>APPROVED</strong> or <strong>REGISTERED</strong>, further instructions will follow shortly.
+    </p>
+
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="#" class="btn">VIEW EVENT DASHBOARD</a>
+    </div>
     """
-    return get_base_template(content, f"Your registration for {event_title} is {status.lower()}.")
+    return get_base_template(content, f"Status Update: {status.upper()} for {event_title}")
 
 def get_event_update_template(event_title: str, message: str, is_cancelled: bool = False) -> str:
     title = "Event Cancelled" if is_cancelled else "Event Updated"

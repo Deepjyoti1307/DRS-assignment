@@ -35,6 +35,7 @@ from app.models.registration import (
 )
 from app.services.email_service import (
     trigger_registration_received,
+    trigger_registration_received_sync,
     trigger_registration_approved,
     trigger_registration_rejected,
     trigger_registration_revoked,
@@ -194,16 +195,34 @@ async def create_registration(
         registration_mode_snapshot=event.registration_mode,
         custom_fields=custom_fields,
     )
+    
+    # We insert it first to get an ID, but we'll delete it if email fails
+    # Or better: we send email first with a temporary ID or just the event info
     await registration.insert()
 
-    # ── Non-blocking triggers (fire-and-forget) ──
-    trigger_registration_received(
+    # ── Synchronous SMTP Verification ──
+    email_success = await trigger_registration_received_sync(
         registration_id=str(registration.id),
         attendee_email=attendee_email,
         attendee_name=attendee_name,
         event_title=event.title,
         status=initial_status.value,
+        venue=event.venue,
+        date=event.date_time.strftime("%d %b %Y, %H:%M")
     )
+
+    if not email_success:
+        # Cleanup registration if email failed
+        await registration.delete()
+        if event.registration_mode == RegistrationMode.open:
+            await _decrement_capacity(event_id)
+        
+        raise HTTPException(
+            status_code=400, 
+            detail="Registration failed: Could not send confirmation email. Please ensure your email address is valid."
+        )
+
+    # ── HubSpot Sync (still fire-and-forget) ──
     if organizer and organizer.hubspot_api_key:
         trigger_hubspot_sync(
             registration_id=str(registration.id),

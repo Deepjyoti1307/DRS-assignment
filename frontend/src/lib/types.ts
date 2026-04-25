@@ -3,7 +3,7 @@
 export type EventMode = "online" | "offline";
 export type RegistrationMode = "open" | "shortlisted";
 export type EventStatus = "draft" | "published" | "cancelled";
-export type RSVPStatus = "pending" | "registered" | "approved" | "rejected" | "revoked" | "checked_in";
+export type RSVPStatus = "pending" | "registered" | "shortlisted" | "approved" | "rejected" | "revoked" | "checked_in";
 
 export interface Event {
   _id?: string;
@@ -37,6 +37,7 @@ export interface StatusHistoryItem {
 }
 
 export interface Registration {
+  _id?: string;
   id: string;
   event_id: string;
   organizer_id: string;

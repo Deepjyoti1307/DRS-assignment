@@ -17,11 +17,13 @@ import {
   RefreshCw,
   History,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  RotateCcw
 } from "lucide-react";
 import { format } from "date-fns";
 import {
   fetchRegistrations,
+  shortlistRegistration,
   approveRegistration,
   rejectRegistration,
   revokeRegistration,
@@ -92,14 +94,15 @@ export default function EventAttendeesPage() {
 
   const handleStatusUpdate = async (
     attendeeId: string,
-    action: 'approve' | 'reject' | 'revoke' | 'check-in'
+    action: 'shortlist' | 'approve' | 'reject' | 'revoke' | 'check-in'
   ) => {
     try {
       setActionLoading(attendeeId);
       const token = await getToken();
       if (!token) return;
 
-      if (action === 'approve') await approveRegistration(token, attendeeId);
+      if (action === 'shortlist') await shortlistRegistration(token, attendeeId);
+      else if (action === 'approve') await approveRegistration(token, attendeeId);
       else if (action === 'reject') await rejectRegistration(token, attendeeId);
       else if (action === 'revoke') await revokeRegistration(token, attendeeId);
       else if (action === 'check-in') await checkInRegistration(token, attendeeId);
@@ -122,6 +125,8 @@ export default function EventAttendeesPage() {
       case "approved":
       case "registered":
         return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+      case "shortlisted":
+        return "bg-blue-500/10 text-blue-400 border-blue-500/20";
       case "rejected":
       case "revoked":
         return "bg-rose-500/10 text-rose-500 border-rose-500/20";
@@ -180,8 +185,8 @@ export default function EventAttendeesPage() {
         {[
           { label: "Registered", value: attendees.length, icon: Users, color: "text-white" },
           { label: "Pending", value: attendees.filter(a => a.status === 'pending').length, icon: Clock, color: "text-amber-400" },
+          { label: "Shortlisted", value: attendees.filter(a => a.status === 'shortlisted').length, icon: Filter, color: "text-blue-400" },
           { label: "Approved", value: attendees.filter(a => ['approved', 'registered'].includes(a.status)).length, icon: CheckCircle2, color: "text-emerald-400" },
-          { label: "Capacity", value: event?.capacity || 0, icon: Calendar, color: "text-white/40" },
         ].map((stat, i) => (
           <div key={i} className="glass-panel rounded-2xl p-5 border border-white/5">
             <div className="flex items-center justify-between mb-2">
@@ -199,6 +204,7 @@ export default function EventAttendeesPage() {
         {[
           { id: "all", label: "All" },
           { id: "pending", label: "Pending" },
+          { id: "shortlisted", label: "Shortlisted" },
           { id: "approved", label: "Approved" },
           { id: "rejected", label: "Rejected" },
           { id: "registered", label: "Registered" },
@@ -318,55 +324,78 @@ export default function EventAttendeesPage() {
                     {format(new Date(attendee.created_at), "dd MMM, HH:mm")}
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => { setSelectedAttendee(attendee); setShowHistory(true); }}
-                        className="p-2.5 hover:bg-white/5 rounded-xl text-muted-foreground hover:text-white transition-all"
+                        className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all flex items-center gap-2"
                         title="Audit Log"
                       >
                         <History className="w-4 h-4" />
+                        <span className="text-[9px] font-black uppercase tracking-widest hidden xl:inline">Logs</span>
                       </button>
 
-                      {attendee.status === "pending" && (
-                        <>
+                      {/* PENDING / SHORTLISTED: Approve or Reject */}
+                      {(attendee.status === "pending" || attendee.status === "shortlisted") && (
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleStatusUpdate(attendee.id, 'approve')}
-                            disabled={actionLoading === attendee.id}
-                            className="p-2.5 hover:bg-emerald-500/10 rounded-xl text-emerald-500/60 hover:text-emerald-500 transition-all"
-                            title="Approve"
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'approve')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
                           >
-                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                            Approve
                           </button>
                           <button
-                            onClick={() => handleStatusUpdate(attendee.id, 'reject')}
-                            disabled={actionLoading === attendee.id}
-                            className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
-                            title="Reject"
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'reject')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5"
                           >
-                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            Reject
                           </button>
-                        </>
+                        </div>
                       )}
 
+                      {/* APPROVED / REGISTERED: Check-in, Shortlist, or Revoke */}
                       {(attendee.status === "approved" || attendee.status === "registered") && (
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleStatusUpdate(attendee.id, 'check-in')}
-                            disabled={actionLoading === attendee.id}
-                            className="p-2.5 hover:bg-lime/10 rounded-xl text-lime/60 hover:text-lime transition-all border border-transparent hover:border-lime/20"
-                            title="Check In"
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'check-in')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-lime text-[#1a1e0a] rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-lime/90 transition-all shadow-lg shadow-lime/20 flex items-center gap-1.5"
                           >
-                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                            Check-in
                           </button>
                           <button
-                            onClick={() => handleStatusUpdate(attendee.id, 'revoke')}
-                            disabled={actionLoading === attendee.id}
-                            className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
-                            title="Revoke Access"
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'shortlist')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
                           >
-                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Filter className="w-3 h-3" />}
+                            Shortlist
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'revoke')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5"
+                          >
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            Revoke
                           </button>
                         </div>
+                      )}
+
+                      {/* REJECTED / REVOKED: Reconsider (Back to Shortlist) */}
+                      {(attendee.status === "rejected" || attendee.status === "revoked") && (
+                        <button
+                          onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'shortlist')}
+                          disabled={actionLoading === (attendee.id || attendee._id)}
+                          className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
+                        >
+                          {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                          Reconsider
+                        </button>
                       )}
                     </div>
                   </td>
@@ -386,14 +415,14 @@ export default function EventAttendeesPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowHistory(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]"
+              className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200]"
             />
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-[#0f1108] border-l border-white/10 z-[110] p-10 overflow-y-auto"
+              className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-[#0f1108] border-l border-white/10 z-[210] p-10 overflow-y-auto shadow-[ -20px_0_50px_rgba(0,0,0,0.5)]"
             >
               <div className="flex items-center justify-between mb-12">
                 <h2 className="text-2xl font-heading font-bold text-white tracking-tight flex items-center gap-3">

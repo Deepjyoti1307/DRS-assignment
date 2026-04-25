@@ -98,6 +98,55 @@ def _fire_and_forget(coro):
 #  Public triggers
 # ═══════════════════════════════════════════════════════
 
+async def trigger_registration_received_sync(
+    registration_id: str,
+    attendee_email: str,
+    attendee_name: str,
+    event_title: str,
+    status: str,
+    venue: str = "TBD",
+    date: str = "TBD"
+) -> bool:
+    """Synchronous version that returns True if email was sent successfully."""
+    subject = f"Registration Received — {event_title}"
+    html = get_registration_template(event_title, attendee_name, status, venue, date)
+    text = f"Hi {attendee_name}, your registration for {event_title} is {status}."
+    
+    # We await the internal _send_email which is already mostly async-friendly 
+    # but we need to check the result.
+    settings = get_settings()
+    if not settings.smtp_host or not settings.smtp_user:
+        # If not configured, we allow registration but log it
+        logger.warning(f"SMTP not configured. Auto-approving registration for {attendee_email}")
+        return True
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = settings.from_email or settings.smtp_user
+    msg["To"] = attendee_email
+    msg.set_content(text)
+    if html:
+        msg.add_alternative(html, subtype="html")
+
+    try:
+        await asyncio.to_thread(_send_smtp_sync, msg, settings)
+        # Log success
+        log = EmailLog(
+            registration_id=registration_id,
+            attendee_email=attendee_email,
+            trigger="registration_received_sync",
+            subject=subject,
+            body=text,
+            template=html or "plaintext",
+            status="sent"
+        )
+        await log.insert()
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send verification email to {attendee_email}: {e}")
+        return False
+
+
 def trigger_registration_received(
     registration_id: str,
     attendee_email: str,

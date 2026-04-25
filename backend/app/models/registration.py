@@ -12,11 +12,12 @@ class RSVPStatus(str, Enum):
     Registration status state machine.
 
     Open mode flow:       new → registered
-    Shortlisted mode:     new → pending → approved / rejected
-    Revoke allowed from:  registered, approved
+    Shortlisted mode:     new → pending → shortlisted → approved / rejected
+    Revoke allowed from:  registered, approved, shortlisted
     """
     new = "new"               # initial state (used only for transition logic)
     pending = "pending"       # awaiting organizer review  (shortlisted mode)
+    shortlisted = "shortlisted" # explicitly shortlisted by organizer
     approved = "approved"     # organizer approved          (shortlisted mode)
     rejected = "rejected"     # organizer rejected          (shortlisted mode)
     registered = "registered" # auto-confirmed              (open mode)
@@ -28,15 +29,22 @@ class RSVPStatus(str, Enum):
 # Keyed by current_status → set of allowed next statuses
 OPEN_TRANSITIONS: Dict[RSVPStatus, Set[RSVPStatus]] = {
     RSVPStatus.new: {RSVPStatus.registered},
-    RSVPStatus.registered: {RSVPStatus.revoked, RSVPStatus.checked_in},
+    RSVPStatus.registered: {RSVPStatus.revoked, RSVPStatus.checked_in, RSVPStatus.shortlisted},
+    RSVPStatus.shortlisted: {RSVPStatus.approved, RSVPStatus.revoked, RSVPStatus.rejected},
+    RSVPStatus.approved: {RSVPStatus.revoked, RSVPStatus.checked_in, RSVPStatus.shortlisted},
+    RSVPStatus.rejected: {RSVPStatus.shortlisted, RSVPStatus.approved},
+    RSVPStatus.revoked: {RSVPStatus.shortlisted, RSVPStatus.approved},
     RSVPStatus.checked_in: set(),
 }
 
 SHORTLISTED_TRANSITIONS: Dict[RSVPStatus, Set[RSVPStatus]] = {
     RSVPStatus.new: {RSVPStatus.pending},
-    RSVPStatus.pending: {RSVPStatus.approved, RSVPStatus.rejected},
-    RSVPStatus.approved: {RSVPStatus.revoked, RSVPStatus.checked_in},
-    RSVPStatus.rejected: set(),  # terminal
+    RSVPStatus.pending: {RSVPStatus.shortlisted, RSVPStatus.approved, RSVPStatus.rejected},
+    RSVPStatus.shortlisted: {RSVPStatus.approved, RSVPStatus.rejected, RSVPStatus.revoked},
+    RSVPStatus.approved: {RSVPStatus.revoked, RSVPStatus.checked_in, RSVPStatus.shortlisted},
+    RSVPStatus.rejected: {RSVPStatus.shortlisted, RSVPStatus.approved}, 
+    RSVPStatus.registered: {RSVPStatus.revoked, RSVPStatus.shortlisted, RSVPStatus.checked_in},
+    RSVPStatus.revoked: {RSVPStatus.shortlisted, RSVPStatus.approved},
     RSVPStatus.checked_in: set(),
 }
 

@@ -37,7 +37,7 @@ export default function DashboardLayout({
         {/* Subtle top decoration */}
         <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-lime/5 to-transparent pointer-events-none" />
         
-        <div className="relative z-10 flex-1 p-8 max-w-7xl mx-auto w-full">
+        <div className="relative z-20 flex-1 p-8 max-w-7xl mx-auto w-full">
           <ErrorBoundary>
             <DashboardTransition>
               {children}

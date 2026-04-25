@@ -16,7 +16,8 @@ import {
   AlertCircle,
   RefreshCw,
   History,
-  Calendar
+  Calendar,
+  RotateCcw
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -80,7 +81,7 @@ export default function GlobalAttendeesPage() {
     }
   }
 
-  const handleStatusUpdate = async (attendeeId: string, action: 'approve' | 'reject' | 'revoke') => {
+  const handleStatusUpdate = async (attendeeId: string, action: 'approve' | 'reject' | 'revoke' | 'shortlist') => {
     try {
       setActionLoading(attendeeId);
       const token = await getToken();
@@ -89,6 +90,10 @@ export default function GlobalAttendeesPage() {
       if (action === 'approve') await approveRegistration(token, attendeeId);
       else if (action === 'reject') await rejectRegistration(token, attendeeId);
       else if (action === 'revoke') await revokeRegistration(token, attendeeId);
+      else if (action === 'shortlist') {
+        const api = await import("../../../../lib/api");
+        await api.shortlistRegistration(token, attendeeId);
+      }
 
       loadData();
     } catch (err: any) {
@@ -250,7 +255,7 @@ export default function GlobalAttendeesPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {filteredAttendees.map((attendee) => (
-                <tr key={attendee.id} className="group hover:bg-white/[0.01] transition-colors">
+                <tr key={attendee.id || attendee._id} className="group hover:bg-white/[0.01] transition-colors">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-lime/20 to-lime/5 border border-lime/10 flex items-center justify-center text-sm font-black text-lime">
@@ -290,44 +295,84 @@ export default function GlobalAttendeesPage() {
                     {format(new Date(attendee.created_at), "dd/MM/yyyy HH:mm")}
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => { setSelectedAttendee(attendee); setShowHistory(true); }}
-                        className="p-2.5 hover:bg-white/5 rounded-xl text-muted-foreground hover:text-white transition-all"
-                        title="View Audit Trail"
+                        className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all flex items-center gap-2"
+                        title="Audit Log"
                       >
                         <History className="w-4 h-4" />
+                        <span className="text-[9px] font-black uppercase tracking-widest hidden xl:inline">Logs</span>
                       </button>
 
-                      {attendee.status === "pending" && (
-                        <>
+                      {/* PENDING / SHORTLISTED: Approve or Reject */}
+                      {(attendee.status === "pending" || attendee.status === "shortlisted") && (
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleStatusUpdate(attendee.id, 'approve')}
-                            disabled={actionLoading === attendee.id}
-                            className="p-2.5 hover:bg-emerald-500/10 rounded-xl text-emerald-500/60 hover:text-emerald-500 transition-all"
-                            title="Approve Entry"
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'approve')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
                           >
-                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                            Approve
                           </button>
                           <button
-                            onClick={() => handleStatusUpdate(attendee.id, 'reject')}
-                            disabled={actionLoading === attendee.id}
-                            className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
-                            title="Deny Entry"
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'reject')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5"
                           >
-                            {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            Reject
                           </button>
-                        </>
+                        </div>
                       )}
 
+                      {/* APPROVED / REGISTERED: Check-in, Shortlist, or Revoke */}
+                      {/* APPROVED / REGISTERED: Check-in, Shortlist, or Revoke */}
                       {(attendee.status === "approved" || attendee.status === "registered") && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'shortlist')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
+                          >
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Filter className="w-3 h-3" />}
+                            Shortlist
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'revoke')}
+                            disabled={actionLoading === (attendee.id || attendee._id)}
+                            className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5"
+                          >
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            Revoke
+                          </button>
+                        </div>
+                      )}
+
+                      {/* REJECTED / REVOKED: Reconsider (Back to Shortlist) */}
+                      {(attendee.status === "rejected" || attendee.status === "revoked") && (
                         <button
-                          onClick={() => handleStatusUpdate(attendee.id, 'revoke')}
-                          disabled={actionLoading === attendee.id}
-                          className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
-                          title="Revoke Permission"
+                          onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'shortlist')}
+                          disabled={actionLoading === (attendee.id || attendee._id)}
+                          className="px-3 py-1.5 bg-lime text-black rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-lime/90 transition-all shadow-lg shadow-lime/20 flex items-center gap-1.5"
                         >
-                          {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                          {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                          Reconsider
+                        </button>
+                      )}
+
+                      {/* CHECKED-IN: View History */}
+                      {attendee.status === "checked_in" && (
+                        <button
+                          onClick={() => {
+                            setSelectedAttendee(attendee);
+                            setShowHistory(true);
+                          }}
+                          className="px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-1.5"
+                        >
+                          <History className="w-3 h-3" />
+                          View Log
                         </button>
                       )}
                     </div>
@@ -348,14 +393,14 @@ export default function GlobalAttendeesPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowHistory(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-md z-50"
+              className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200]"
             />
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-[#0f1108] border-l border-white/10 z-[60] p-10 overflow-y-auto"
+              className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-[#0f1108] border-l border-white/10 z-[210] p-10 overflow-y-auto shadow-[ -20px_0_50px_rgba(0,0,0,0.5)]"
             >
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-3">
