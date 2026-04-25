@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Zap
 } from "lucide-react";
-import { fetchSettings, updateSettings, type Settings } from "@/lib/api";
+import { fetchSettings, updateSettings, triggerHubspotBulkSync, type Settings } from "@/lib/api";
 import { motion } from "framer-motion";
 
 export default function SettingsPage() {
@@ -25,6 +25,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isBulkSyncing, setIsBulkSyncing] = useState(false);
   
   // Form state
   const [hubspotKey, setHubspotKey] = useState("");
@@ -90,6 +91,21 @@ export default function SettingsPage() {
       setError(err.message || "Failed to disconnect HubSpot");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleBulkSync() {
+    try {
+      setIsBulkSyncing(true);
+      const token = await getToken();
+      if (!token) return;
+      await triggerHubspotBulkSync(token);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || "Bulk sync failed");
+    } finally {
+      setIsBulkSyncing(false);
     }
   }
 
@@ -212,12 +228,41 @@ export default function SettingsPage() {
                 <Key className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
               </div>
 
-              {settings?.has_hubspot_key && (
+              {settings?.has_hubspot_key && !settings?.is_hubspot_key_valid && (
+                <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-rose-500" />
+                  <div className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">
+                    DECRYPTION ERROR: The stored API key is invalid or corrupted. Please re-enter your HubSpot token.
+                  </div>
+                </div>
+              )}
+
+              {settings?.has_hubspot_key && settings?.is_hubspot_key_valid && (
+                <div className="mt-6 flex flex-wrap items-center gap-4">
+                  <button 
+                    onClick={handleBulkSync}
+                    disabled={isBulkSyncing}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-lime/10 text-lime border border-lime/20 hover:bg-lime/20 transition-all font-black text-[10px] uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {isBulkSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 fill-current" />}
+                    Bulk Sync All Records
+                  </button>
+                  
+                  <button 
+                    onClick={handleRemoveKey}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-rose-500/60 hover:text-rose-500 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Disconnect Ecosystem
+                  </button>
+                </div>
+              )}
+
+              {settings?.has_hubspot_key && !settings?.is_hubspot_key_valid && (
                 <button 
                   onClick={handleRemoveKey}
                   className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-rose-500/60 hover:text-rose-500 transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Disconnect HubSpot Ecosystem
+                  <Trash2 className="w-3.5 h-3.5" /> Disconnect Broken Integration
                 </button>
               )}
             </div>

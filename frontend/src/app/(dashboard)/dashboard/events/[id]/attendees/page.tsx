@@ -15,10 +15,11 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  History,
+  RotateCcw,
+  Zap,
+  History as HistoryIcon,
   Calendar,
-  ExternalLink,
-  RotateCcw
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -61,6 +62,29 @@ export default function EventAttendeesPage() {
   useEffect(() => {
     loadData();
   }, [id, filterStatus, page]);
+
+  const handleBulkSync = async () => {
+    try {
+      setLoading(true);
+      const token = await getToken();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/integrations/hubspot/sync`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        alert("Bulk sync initiated successfully!");
+        loadData();
+      } else {
+        const err = await res.json();
+        alert(`Sync failed: ${err.detail || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to trigger sync");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   async function loadData() {
     try {
@@ -176,8 +200,17 @@ export default function EventAttendeesPage() {
           <button
             onClick={loadData}
             className="p-2.5 rounded-xl glass-panel text-muted-foreground hover:text-white transition-colors"
+            title="Refresh List"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={handleBulkSync}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff7a59]/10 text-[#ff7a59] border border-[#ff7a59]/20 hover:bg-[#ff7a59]/20 transition-all font-bold text-xs uppercase tracking-widest"
+            title="Force HubSpot Sync"
+          >
+            <Zap className="w-4 h-4 fill-current" />
+            Sync All
           </button>
         </div>
       </div>
@@ -333,7 +366,7 @@ export default function EventAttendeesPage() {
                         className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all flex items-center gap-2"
                         title="Audit Log"
                       >
-                        <History className="w-4 h-4" />
+                        <HistoryIcon className="w-4 h-4" />
                         <span className="text-[9px] font-black uppercase tracking-widest hidden xl:inline">Logs</span>
                       </button>
 
@@ -430,7 +463,7 @@ export default function EventAttendeesPage() {
             >
               <div className="flex items-center justify-between mb-12">
                 <h2 className="text-2xl font-heading font-bold text-white tracking-tight flex items-center gap-3">
-                  <History className="w-6 h-6 text-lime" />
+                  <HistoryIcon className="w-6 h-6 text-lime" />
                   Audit Trail
                 </h2>
                 <button

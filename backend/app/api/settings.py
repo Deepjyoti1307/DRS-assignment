@@ -16,6 +16,7 @@ class SettingsResponse(BaseModel):
     name: Optional[str]
     hubspot_api_key_masked: Optional[str]
     has_hubspot_key: bool
+    is_hubspot_key_valid: bool
 
 class SettingsUpdate(BaseModel):
     name: Optional[str] = None
@@ -26,11 +27,13 @@ def mask_key(key: Optional[str]) -> Optional[str]:
         return None
     try:
         decrypted = decrypt_key(key)
+        if not decrypted:
+            return "INVALID_KEY"
         if len(decrypted) <= 8:
             return "*******"
         return f"{decrypted[:4]}********{decrypted[-4:]}"
     except:
-        return "*******"
+        return "DECRYPTION_ERROR"
 
 @router.get("/api/settings", response_model=SettingsResponse)
 async def get_settings(user=Depends(get_current_user)):
@@ -47,12 +50,17 @@ async def get_settings(user=Depends(get_current_user)):
         )
         await organizer.insert()
     
+    is_valid = False
+    if organizer.hubspot_api_key:
+        is_valid = len(decrypt_key(organizer.hubspot_api_key)) > 0
+
     return SettingsResponse(
         clerk_user_id=organizer.clerk_user_id,
         email=organizer.email,
         name=organizer.name,
         hubspot_api_key_masked=mask_key(organizer.hubspot_api_key),
-        has_hubspot_key=bool(organizer.hubspot_api_key)
+        has_hubspot_key=bool(organizer.hubspot_api_key),
+        is_hubspot_key_valid=is_valid
     )
 
 @router.patch("/api/settings", response_model=SettingsResponse)
@@ -75,12 +83,17 @@ async def update_settings(payload: SettingsUpdate, user=Depends(get_current_user
     organizer.updated_at = datetime.utcnow()
     await organizer.save()
     
+    is_valid = False
+    if organizer.hubspot_api_key:
+        is_valid = len(decrypt_key(organizer.hubspot_api_key)) > 0
+
     return SettingsResponse(
         clerk_user_id=organizer.clerk_user_id,
         email=organizer.email,
         name=organizer.name,
         hubspot_api_key_masked=mask_key(organizer.hubspot_api_key),
-        has_hubspot_key=bool(organizer.hubspot_api_key)
+        has_hubspot_key=bool(organizer.hubspot_api_key),
+        is_hubspot_key_valid=is_valid
     )
 
 @router.patch("/api/settings/hubspot")

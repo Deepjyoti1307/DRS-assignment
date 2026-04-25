@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { MapPin, X, Loader2 } from "lucide-react";
+import { MapPin, X, Loader2, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AddressAutocompleteProps {
@@ -139,10 +139,14 @@ export default function AddressAutocomplete({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[100] w-full mt-2 bg-[#0a0c04] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden backdrop-blur-xl"
+            className="absolute z-[100] w-full mt-2 bg-[#0d0f04] border border-white/10 rounded-2xl shadow-[0_20px_60px_-10px_rgba(0,0,0,0.9),0_0_20px_rgba(193,217,73,0.05)] overflow-hidden backdrop-blur-2xl ring-1 ring-white/10"
           >
-            <div className="p-2 border-b border-white/5 bg-white/[0.02]">
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3">Venue Suggestions</p>
+            <div className="p-3 border-b border-white/5 bg-white/[0.03] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3 h-3 text-lime" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-lime">Location Suggestions</p>
+              </div>
+              <p className="text-[9px] font-medium text-white/20">Powered by Komoot</p>
             </div>
             <ul className="max-h-64 overflow-y-auto custom-scrollbar">
               {results.map((place, i) => (
@@ -160,6 +164,9 @@ export default function AddressAutocomplete({
                 </li>
               ))}
             </ul>
+            <div className="p-2 bg-white/[0.01] border-t border-white/5 text-center">
+              <p className="text-[9px] text-white/20 uppercase tracking-[0.2em] font-bold">Select a location to lock coordinates</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

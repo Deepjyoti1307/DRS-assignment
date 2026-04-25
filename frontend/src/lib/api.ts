@@ -181,6 +181,12 @@ export async function checkInRegistration(
   });
 }
 
+export async function triggerHubspotBulkSync(token: string): Promise<{ status: string }> {
+  return apiFetch<{ status: string }>("/api/integrations/hubspot/sync", token, {
+    method: "POST",
+  });
+}
+
 // ─── Utilities ─────────────────────────────────────────────────────────
 
 export async function uploadFile(token: string, file: File): Promise<{ url: string }> {
@@ -249,6 +255,7 @@ export interface Settings {
   name: string | null;
   hubspot_api_key_masked: string | null;
   has_hubspot_key: boolean;
+  is_hubspot_key_valid: boolean;
 }
 
 export async function fetchSettings(token: string): Promise<Settings> {
