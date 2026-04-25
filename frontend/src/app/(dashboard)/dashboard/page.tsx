@@ -27,7 +27,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { fetchEvents, duplicateEvent } from "@/lib/api";
 import type { Event, EventStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 // ─── Animation Variants ───────────────────────────────────────────────
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -47,7 +47,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
   visible: {
     opacity: 1,
