@@ -87,3 +87,20 @@
   backdrop-filter: blur(40px);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(193, 217, 73, 0.2);
+}

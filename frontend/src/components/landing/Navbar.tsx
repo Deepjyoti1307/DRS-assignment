@@ -17,7 +17,8 @@ export default function Navbar() {
         <nav className="relative flex items-center justify-between h-14">
           {/* ── Logo (Left) ── */}
           <div className="w-1/3 flex items-center">
-            <Link href="/" className="flex items-center gap-2 z-50">
+            <Link href="/" className="flex items-center gap-3 z-50 group">
+              <img src="/logo.png" alt="Logo" className="w-9 h-9 object-contain group-hover:scale-110 transition-transform duration-300" />
               <span className="text-3xl font-bold tracking-tight text-white drop-shadow-md">
                 {BRAND_NAME}
               </span>

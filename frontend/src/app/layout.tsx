@@ -22,6 +22,17 @@ export const metadata: Metadata = {
   title: "Eventic — Go from Idea to Live Event in Minutes",
   description:
     "The AI-powered event management ecosystem for visionaries. Orchestrate seamless digital and physical experiences with tranquil precision.",
+  openGraph: {
+    title: "Eventic",
+    description: "Go from Idea to Live Event in Minutes",
+    images: [{ url: "/logo.png" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Eventic",
+    description: "Go from Idea to Live Event in Minutes",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({

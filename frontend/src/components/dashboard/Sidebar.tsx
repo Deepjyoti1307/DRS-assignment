@@ -45,8 +45,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         isCollapsed ? "flex-col gap-6" : "flex-row"
       )}>
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-lime rounded-2xl flex items-center justify-center border-glow group-hover:scale-110 transition-all duration-500 shadow-[0_0_20px_rgba(193,217,73,0.3)]">
-            <span className="text-olive-dark font-black text-xl leading-none">E</span>
+          <div className="w-10 h-10 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
+            <img src="/logo.png" alt="Eventic Logo" className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(193,217,73,0.3)]" />
           </div>
           {!isCollapsed && (
             <span className="font-heading font-black text-2xl tracking-tighter text-white transition-all duration-500">
@@ -64,7 +64,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-2">
+      <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto custom-scrollbar">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           return (
