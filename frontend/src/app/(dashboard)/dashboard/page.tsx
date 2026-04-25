@@ -13,6 +13,8 @@ import {
   PlusCircle,
   TrendingUp,
   RefreshCw,
+  Share2,
+  Check,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -25,11 +27,37 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
 import { fetchEvents, duplicateEvent } from "@/lib/api";
 import type { Event, EventStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { EventCardSkeleton, StatCardSkeleton } from "@/components/dashboard/Skeletons";
 import { cn } from "@/lib/utils";
+
+// ─── Animation Variants ───────────────────────────────────────────────
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.23, 1, 0.32, 1]
+    }
+  }
+};
 
 // ─── Chart helpers ────────────────────────────────────────────────────
 
@@ -121,13 +149,37 @@ function CapacityBar({ registered, capacity }: { registered: number; capacity: n
 // ─── Event Card ───────────────────────────────────────────────────────
 
 function EventCard({ event, onDuplicate }: { event: Event; onDuplicate: (id: string) => void }) {
+  const [copied, setCopied] = useState(false);
   const date = new Date(event.date_time);
   const isPast = date < new Date();
 
+  const handleShare = async (slug: string) => {
+    const publicUrl = `${window.location.origin}/e/${slug}`;
+    let finalUrl = publicUrl;
+
+    try {
+      // Attempt to shorten with TinyURL
+      const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(publicUrl)}`);
+      if (response.ok) {
+        finalUrl = await response.text();
+      }
+    } catch (err) {
+      console.warn("TinyURL shortening failed, using direct link:", err);
+    }
+
+    await navigator.clipboard.writeText(finalUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="group relative glass-panel rounded-[2rem] p-7 hover:border-lime/30 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+    <motion.div 
+      variants={itemVariants}
+      whileHover={{ y: -5 }}
+      className="group relative glass-panel rounded-[2rem] p-7 hover:border-lime/20 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.8)] overflow-hidden"
+    >
       {/* Subtle background glow on hover */}
-      <div className="absolute -inset-1 bg-gradient-to-br from-lime/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl -z-10" />
+      <div className="absolute -inset-1 bg-gradient-to-br from-lime/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-3xl -z-10" />
       
       <div className="space-y-6">
         {/* Header: Mode & Status */}
@@ -204,13 +256,29 @@ function EventCard({ event, onDuplicate }: { event: Event; onDuplicate: (id: str
             <Users className="w-3.5 h-3.5" /> Guests
           </Link>
           {event.status === "published" && event.slug ? (
-            <Link
-              href={`/e/${event.slug}`}
-              target="_blank"
-              className="col-span-2 flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-lime text-olive-dark hover:scale-[1.02] active:scale-[0.98] transition-all border-glow"
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> View Public Page
-            </Link>
+            <>
+              <Link
+                href={`/e/${event.slug}`}
+                target="_blank"
+                className="flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-lime text-olive-dark hover:scale-[1.02] active:scale-[0.98] transition-all border-glow"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> View
+              </Link>
+              <button
+                onClick={() => handleShare(event.slug!)}
+                className="flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all border border-white/5 relative overflow-hidden"
+              >
+                {copied ? (
+                  <span className="flex items-center gap-2 text-lime animate-in fade-in zoom-in duration-300">
+                    <Check className="w-3.5 h-3.5" /> Copied
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Share2 className="w-3.5 h-3.5" /> Share
+                  </span>
+                )}
+              </button>
+            </>
           ) : (
             <button
               onClick={() => onDuplicate(event._id || event.id || "")}
@@ -221,7 +289,7 @@ function EventCard({ event, onDuplicate }: { event: Event; onDuplicate: (id: str
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -296,9 +364,14 @@ export default function DashboardPage() {
   const firstName = user?.firstName ?? "Organizer";
 
   return (
-    <div className="space-y-8">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="space-y-8"
+    >
       {/* ── Header ── */}
-      <div className="flex items-start justify-between">
+      <motion.div variants={itemVariants} className="flex items-start justify-between">
         <div>
           <p className="text-xs text-lime font-semibold uppercase tracking-widest mb-1">
             Overview
@@ -326,10 +399,10 @@ export default function DashboardPage() {
             Create Event
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : [
@@ -349,11 +422,11 @@ export default function DashboardPage() {
                 <p className={cn("text-4xl font-heading font-black tracking-tight", s.textColor)}>{s.value}</p>
               </div>
             ))}
-      </div>
+      </motion.div>
 
       {/* ── Charts ── */}
       {!loading && !error && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Registration Trends — spans 2 cols */}
           <div className="lg:col-span-2 glass-panel rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
@@ -446,12 +519,12 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Error ── */}
       {error && (
-        <div className="glass-panel rounded-2xl p-5 border-red-500/20 flex items-center justify-between">
+        <motion.div variants={itemVariants} className="glass-panel rounded-2xl p-5 border-red-500/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-xl">⚠️</span>
             <div>
@@ -470,11 +543,11 @@ export default function DashboardPage() {
           >
             <RefreshCw className="w-3.5 h-3.5" /> Retry
           </button>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Filter tabs ── */}
-      <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl w-fit border border-white/5">
+      <motion.div variants={itemVariants} className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl w-fit border border-white/5">
         {FILTERS.map((f) => (
           <button
             key={f.value}
@@ -489,7 +562,7 @@ export default function DashboardPage() {
             {f.label}
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Events grid ── */}
       {loading ? (
@@ -497,7 +570,7 @@ export default function DashboardPage() {
           {Array.from({ length: 6 }).map((_, i) => <EventCardSkeleton key={i} />)}
         </div>
       ) : events.length === 0 && !error ? (
-        <div className="glass-panel rounded-3xl p-16 flex flex-col items-center justify-center text-center">
+        <motion.div variants={itemVariants} className="glass-panel rounded-3xl p-16 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-lime/5 rounded-3xl flex items-center justify-center mb-6 border border-lime/10">
             <Calendar className="w-9 h-9 text-lime/40" />
           </div>
@@ -516,9 +589,12 @@ export default function DashboardPage() {
             <PlusCircle className="w-5 h-5" />
             Create Your First Event
           </Link>
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <motion.div 
+          variants={containerVariants}
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+        >
           {events.map((event) => (
             <EventCard 
               key={event._id || event.id} 
@@ -526,8 +602,8 @@ export default function DashboardPage() {
               onDuplicate={handleDuplicate}
             />
           ))}
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -43,6 +43,7 @@ def create_app() -> FastAPI:
 		import os
 		if not os.path.exists("uploads"):
 			os.makedirs("uploads")
+		print(f"Startup: Allowed CORS origins: {settings.cors_origin_list}")
 		await init_db()
 
 	return app

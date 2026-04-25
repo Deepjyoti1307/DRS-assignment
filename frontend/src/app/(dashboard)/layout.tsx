@@ -7,6 +7,7 @@ import { DashboardTransition } from "@/components/dashboard/DashboardTransition"
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DashboardLayout({
   children,
@@ -16,7 +17,7 @@ export default function DashboardLayout({
   const [isCollapsed, setIsCollapsed] = useState(true); // Default collapsed (hidden on mobile)
 
   return (
-    <div className="flex min-h-screen bg-background gradient-mesh overflow-x-hidden">
+    <div className="flex min-h-screen bg-background gradient-mesh overflow-x-hidden selection:bg-lime/20 selection:text-lime">
       {/* Mobile Menu Trigger */}
       <button
         onClick={() => setIsCollapsed(false)}
@@ -30,20 +31,25 @@ export default function DashboardLayout({
 
       <Sidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
       <main className={cn(
-        "flex-1 min-h-screen relative overflow-y-auto flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+        "flex-1 min-h-screen relative overflow-y-auto flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]",
         "ml-0 md:ml-64",
         isCollapsed && "md:ml-[80px]"
       )}>
         {/* Subtle top decoration */}
-        <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-lime/5 to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[60vh] bg-gradient-to-b from-lime/[0.02] via-transparent to-transparent pointer-events-none" />
         
-        <div className="relative z-20 flex-1 p-8 max-w-7xl mx-auto w-full">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+          className="relative z-20 flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full"
+        >
           <ErrorBoundary>
             <DashboardTransition>
               {children}
             </DashboardTransition>
           </ErrorBoundary>
-        </div>
+        </motion.div>
 
         <div className="mt-auto relative z-10 w-full px-8">
           <Footer />
