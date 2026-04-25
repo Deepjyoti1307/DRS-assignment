@@ -266,17 +266,18 @@ export default function EventAttendeesPage() {
             <p className="text-muted-foreground font-medium uppercase tracking-widest text-[10px]">No records found for this event.</p>
           </div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white/[0.02] text-[10px] uppercase tracking-widest text-muted-foreground font-black border-b border-white/5">
-                <th className="px-8 py-6">Attendee Identity</th>
-                <th className="px-8 py-6">Contact info</th>
-                <th className="px-8 py-6">RSVP Status</th>
-                {hasHubspot && <th className="px-8 py-6">HubSpot Sync</th>}
-                <th className="px-8 py-6">Timestamp</th>
-                <th className="px-8 py-6 text-right">Actions</th>
-              </tr>
-            </thead>
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[900px]">
+              <thead>
+                <tr className="bg-white/[0.02] text-[10px] uppercase tracking-widest text-muted-foreground font-black border-b border-white/5">
+                  <th className="px-8 py-6">Attendee Identity</th>
+                  <th className="px-8 py-6">Contact info</th>
+                  <th className="px-8 py-6">RSVP Status</th>
+                  {hasHubspot && <th className="px-8 py-6">HubSpot Sync</th>}
+                  <th className="px-8 py-6">Timestamp</th>
+                  <th className="px-8 py-6 text-right">Directives</th>
+                </tr>
+              </thead>
             <tbody className="divide-y divide-white/5">
               {filteredAttendees.map((attendee) => (
                 <tr key={attendee.id} className="group hover:bg-white/[0.01] transition-colors">
@@ -338,21 +339,21 @@ export default function EventAttendeesPage() {
 
                       {/* PENDING / SHORTLISTED: Approve or Reject */}
                       {(attendee.status === "pending" || attendee.status === "shortlisted") && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'approve')}
                             disabled={actionLoading === (attendee.id || attendee._id)}
-                            className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
+                            className="px-6 py-2.5 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-[0.15em] hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] border border-emerald-400/30 flex items-center gap-2 disabled:opacity-50"
                           >
-                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                             Approve
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'reject')}
                             disabled={actionLoading === (attendee.id || attendee._id)}
-                            className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5"
+                            className="px-6 py-2.5 bg-rose-500 text-white rounded-full text-[10px] font-black uppercase tracking-[0.15em] hover:bg-rose-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(244,63,94,0.3)] border border-rose-400/30 flex items-center gap-2 disabled:opacity-50"
                           >
-                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                             Reject
                           </button>
                         </div>
@@ -360,29 +361,29 @@ export default function EventAttendeesPage() {
 
                       {/* APPROVED / REGISTERED: Check-in, Shortlist, or Revoke */}
                       {(attendee.status === "approved" || attendee.status === "registered") && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'check-in')}
                             disabled={actionLoading === (attendee.id || attendee._id)}
-                            className="px-3 py-1.5 bg-lime text-[#1a1e0a] rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-lime/90 transition-all shadow-lg shadow-lime/20 flex items-center gap-1.5"
+                            className="px-6 py-2.5 bg-lime text-[#1a1e0a] rounded-full text-[10px] font-black uppercase tracking-[0.15em] hover:bg-white hover:scale-105 transition-all shadow-[0_0_20px_rgba(193,217,73,0.3)] border border-lime/30 flex items-center gap-2 disabled:opacity-50"
                           >
-                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                             Check-in
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'shortlist')}
                             disabled={actionLoading === (attendee.id || attendee._id)}
-                            className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
+                            className="px-6 py-2.5 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-[0.15em] hover:bg-blue-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-blue-400/30 flex items-center gap-2 disabled:opacity-50"
                           >
-                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Filter className="w-3 h-3" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Filter className="w-3.5 h-3.5" />}
                             Shortlist
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'revoke')}
                             disabled={actionLoading === (attendee.id || attendee._id)}
-                            className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5"
+                            className="px-6 py-2.5 bg-rose-600 text-white rounded-full text-[10px] font-black uppercase tracking-[0.15em] hover:bg-rose-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(225,29,72,0.4)] border border-rose-400/30 flex items-center gap-2 disabled:opacity-50"
                           >
-                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                             Revoke
                           </button>
                         </div>
@@ -393,9 +394,9 @@ export default function EventAttendeesPage() {
                         <button
                           onClick={() => handleStatusUpdate(attendee.id || attendee._id!, 'shortlist')}
                           disabled={actionLoading === (attendee.id || attendee._id)}
-                          className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
+                          className="px-8 py-2.5 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-[0.15em] hover:bg-blue-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] border border-blue-400/30 flex items-center gap-2 disabled:opacity-50"
                         >
-                          {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                          {actionLoading === (attendee.id || attendee._id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
                           Reconsider
                         </button>
                       )}
@@ -405,6 +406,7 @@ export default function EventAttendeesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

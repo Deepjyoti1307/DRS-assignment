@@ -88,6 +88,7 @@ async def _perform_hubspot_upsert(
     name: str,
     event_title: str,
     status: str,
+    phone: Optional[str] = None,
 ):
     """
     HubSpot upsert via search + create/update (v3 API does not support /upsert).
@@ -105,6 +106,8 @@ async def _perform_hubspot_upsert(
         "firstname": first,
         "lastname": last,
     }
+    if phone:
+        properties["phone"] = phone
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         custom_props = await _ensure_custom_properties(client, headers)
@@ -113,7 +116,8 @@ async def _perform_hubspot_upsert(
         if "rsvp_status" in custom_props:
             properties["rsvp_status"] = status
         if "rsvp_timestamp" in custom_props:
-            properties["rsvp_timestamp"] = datetime.utcnow().isoformat()
+            # HubSpot datetime properties want UTC midnight or ISO with millisecond precision and 'Z'
+            properties["rsvp_timestamp"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
         # 1) Search by email
         search_url = f"{base}/search"
@@ -175,6 +179,7 @@ async def _sync_registration_to_hubspot(
     attendee_name: str,
     event_title: str,
     status: str,
+    phone: Optional[str] = None,
 ) -> None:
     if not organizer_hubspot_key:
         return
@@ -194,6 +199,7 @@ async def _sync_registration_to_hubspot(
             name=attendee_name,
             event_title=event_title,
             status=status,
+            phone=phone,
         )
     except Exception as e:
         logger.error(f"[HUBSPOT] Final failure after retries for {attendee_email}: {str(e)}")
@@ -209,6 +215,7 @@ def trigger_hubspot_sync(
     attendee_name: str,
     event_title: str,
     status: str,
+    phone: Optional[str] = None,
 ) -> None:
     _fire_and_forget(
         _sync_registration_to_hubspot(
@@ -218,5 +225,6 @@ def trigger_hubspot_sync(
             attendee_name=attendee_name,
             event_title=event_title,
             status=status,
+            phone=phone,
         )
     )

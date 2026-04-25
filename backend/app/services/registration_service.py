@@ -231,6 +231,7 @@ async def create_registration(
             attendee_name=attendee_name,
             event_title=event.title,
             status=initial_status.value,
+            phone=attendee_phone,
         )
 
     return registration
@@ -340,6 +341,7 @@ async def update_registration_status(
             attendee_name=reg.attendee_name,
             event_title=event.title,
             status=target_status.value,
+            phone=reg.attendee_phone,
         )
 
     return reg
@@ -409,6 +411,7 @@ async def sync_all_to_hubspot(organizer_id: str) -> dict:
             attendee_name=reg.attendee_name,
             event_title=event_map.get(reg.event_id, "Unknown Event"),
             status=reg.status.value,
+            phone=reg.attendee_phone,
         )
         count += 1
 
@@ -437,6 +440,7 @@ async def sync_registration_to_hubspot(registration_id: str, organizer_id: str) 
         attendee_name=reg.attendee_name,
         event_title=event_title,
         status=reg.status.value,
+        phone=reg.attendee_phone,
     )
 
     return {"status": "queued"}
