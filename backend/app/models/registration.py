@@ -81,6 +81,7 @@ class Registration(Document):
     sync_status: SyncStatus = SyncStatus.not_synced
     hubspot_contact_id: Optional[str] = None
     hubspot_last_synced_at: Optional[datetime] = None
+    sync_error_message: Optional[str] = None
 
     # ── Timestamps ──
     created_at: datetime = Field(default_factory=datetime.utcnow)

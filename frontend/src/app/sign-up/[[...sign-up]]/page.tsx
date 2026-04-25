@@ -1,6 +1,12 @@
 import { SignUp } from "@clerk/nextjs";
 
-export default function SignUpPage() {
+export default function SignUpPage({
+  searchParams,
+}: {
+  searchParams: { redirect_url?: string };
+}) {
+  const redirectUrl = searchParams?.redirect_url || "/dashboard";
+
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center relative overflow-hidden">
       {/* ── Background Effects ── */}
@@ -33,6 +39,8 @@ export default function SignUpPage() {
       {/* ── Clerk Sign Up Component ── */}
       <div className="relative z-10">
         <SignUp
+          forceRedirectUrl={redirectUrl}
+          fallbackRedirectUrl={redirectUrl}
           appearance={{
             elements: {
               rootBox: "mx-auto",

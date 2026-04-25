@@ -1,6 +1,14 @@
 import { SignIn } from "@clerk/nextjs";
 
-export default function SignInPage() {
+export default function SignInPage({
+  searchParams,
+}: {
+  searchParams: { reason?: string; redirect_url?: string };
+}) {
+  const reason = searchParams?.reason;
+  const redirectUrl = searchParams?.redirect_url || "/dashboard";
+  const showExpiredMessage = reason === "session-expired";
+
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center relative overflow-hidden">
       {/* ── Background Effects ── */}
@@ -32,7 +40,14 @@ export default function SignInPage() {
 
       {/* ── Clerk Sign In Component ── */}
       <div className="relative z-10">
+        {showExpiredMessage && (
+          <div className="mb-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-200">
+            Your session has expired. Please sign in again to continue.
+          </div>
+        )}
         <SignIn
+          forceRedirectUrl={redirectUrl}
+          fallbackRedirectUrl={redirectUrl}
           appearance={{
             elements: {
               rootBox: "mx-auto",

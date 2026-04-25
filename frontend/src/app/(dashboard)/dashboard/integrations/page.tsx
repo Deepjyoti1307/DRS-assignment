@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import { 
   Zap, 
   Settings, 
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 
 export default function IntegrationsPage() {
+  const { getToken } = useAuth();
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -79,7 +82,11 @@ export default function IntegrationsPage() {
                 if (!confirm) return;
                 
                 try {
-                  const token = await (window as any).Clerk?.session?.getToken();
+                  const token = await getToken();
+                  if (!token) {
+                    alert("Authentication required. Please sign in again.");
+                    return;
+                  }
                   const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/integrations/hubspot/sync`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }

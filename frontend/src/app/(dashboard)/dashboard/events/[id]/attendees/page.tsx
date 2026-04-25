@@ -303,12 +303,17 @@ export default function EventAttendeesPage() {
                       <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
                         attendee.sync_status === 'synced' ? 'text-emerald-400' : 
                         attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
-                      }`}>
+                      }`} title={attendee.sync_status === 'failed' ? attendee.sync_error_message || 'Sync failed' : undefined}>
                         <div className={`w-1.5 h-1.5 rounded-full ${
                           attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' : 
                           attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
                         }`} />
-                        {attendee.sync_status}
+                        <span>{attendee.sync_status}</span>
+                        {attendee.hubspot_last_synced_at && (
+                          <span className="text-[9px] text-white/40 normal-case tracking-normal">
+                            ({format(new Date(attendee.hubspot_last_synced_at), "dd MMM HH:mm")})
+                          </span>
+                        )}
                       </div>
                     </td>
                   )}

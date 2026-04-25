@@ -150,6 +150,12 @@ async def check_in_registration(registration_id: str, user=Depends(get_current_u
     )
 
 
+@router.patch("/api/registrations/{registration_id}/checkin")
+async def checkin_registration_compat(registration_id: str, user=Depends(get_current_user)):
+    """Compatibility alias for clients expecting /checkin."""
+    return await check_in_registration(registration_id, user)
+
+
 @router.post("/api/registrations/{registration_id}/sync-hubspot")
 async def retry_hubspot_sync(registration_id: str, user=Depends(get_current_user)):
     organizer_id = user.get("sub") or user.get("user_id")

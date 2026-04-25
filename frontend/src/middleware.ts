@@ -1,9 +1,22 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
 
 export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth().protect();
+  if (!isProtectedRoute(req)) return;
+
+  const { userId } = auth();
+  if (userId) return;
+
+  const signInUrl = new URL("/sign-in", req.url);
+  const hasSessionCookie = req.cookies.has("__session");
+  signInUrl.searchParams.set("reason", hasSessionCookie ? "session-expired" : "auth-required");
+  signInUrl.searchParams.set(
+    "redirect_url",
+    `${req.nextUrl.pathname}${req.nextUrl.search}`
+  );
+  return NextResponse.redirect(signInUrl);
 });
 
 export const config = {

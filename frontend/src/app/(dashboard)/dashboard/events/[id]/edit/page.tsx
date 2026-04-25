@@ -153,7 +153,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
       if (!token) throw new Error("Authentication failed");
 
       await deleteEvent(token, params.id);
-      router.push("/dashboard/events");
+      router.push("/dashboard");
     } catch (err: any) {
       console.error("Delete failed:", err);
       alert(err.message || "Failed to delete event. Please ensure you have permission.");

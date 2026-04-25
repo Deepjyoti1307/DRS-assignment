@@ -83,6 +83,12 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
 
   const { event, availability } = data;
   const eventDate = new Date(event.date_time);
+  const offsetMinutes = -eventDate.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absOffset = Math.abs(offsetMinutes);
+  const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, "0");
+  const offsetMins = String(absOffset % 60).padStart(2, "0");
+  const utcOffset = `UTC${sign}${offsetHours}:${offsetMins}`;
   
   const isRegistrationOpen = availability.state === "open";
   const requiresPhone = availability.requires_phone === true;
@@ -149,6 +155,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
                   <p className="text-sm text-white/60 mt-1">
                     {eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} — {event.mode === 'online' ? 'Online' : 'Local Time'}
                   </p>
+                  <p className="text-xs text-white/40 mt-1">Timezone offset: {utcOffset}</p>
                 </div>
               </div>
             </div>
