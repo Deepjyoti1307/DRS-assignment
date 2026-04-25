@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Share2,
   Check,
+  Search,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -354,6 +355,13 @@ export default function DashboardPage() {
   const trendData = buildTrendData(events);
   const distData = buildDistributionData(events);
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredEvents = events.filter(e => 
+    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (e.venue && e.venue.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   const greeting = () => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
@@ -547,21 +555,29 @@ export default function DashboardPage() {
       )}
 
       {/* ── Filter tabs ── */}
-      <motion.div variants={itemVariants} className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl w-fit border border-white/5">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setActiveFilter(f.value)}
-            className={cn(
-              "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
-              activeFilter === f.value
-                ? "bg-lime text-olive-dark shadow-[0_0_15px_rgba(193,217,73,0.3)]"
-                : "text-white/40 hover:text-white hover:bg-white/5"
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl w-fit border border-white/5">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setActiveFilter(f.value)}
+              className={cn(
+                "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                activeFilter === f.value
+                  ? "bg-lime text-olive-dark shadow-[0_0_15px_rgba(193,217,73,0.3)]"
+                  : "text-white/40 hover:text-white hover:bg-white/5"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        
+        {searchQuery && (
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/30">
+            Showing results for: <span className="text-lime">{searchQuery}</span>
+          </p>
+        )}
       </motion.div>
 
       {/* ── Events grid ── */}
@@ -569,19 +585,29 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {Array.from({ length: 6 }).map((_, i) => <EventCardSkeleton key={i} />)}
         </div>
-      ) : events.length === 0 && !error ? (
+      ) : filteredEvents.length === 0 && !error ? (
         <motion.div variants={itemVariants} className="glass-panel rounded-3xl p-16 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-lime/5 rounded-3xl flex items-center justify-center mb-6 border border-lime/10">
-            <Calendar className="w-9 h-9 text-lime/40" />
+            <Search className="w-9 h-9 text-white/10" />
           </div>
           <h3 className="text-2xl font-heading font-bold text-white mb-3">
-            {activeFilter === "all" ? "No events yet" : `No ${activeFilter} events`}
+            {searchQuery ? "No matches found" : activeFilter === "all" ? "No events yet" : `No ${activeFilter} events`}
           </h3>
           <p className="text-muted-foreground max-w-sm mb-8 text-sm leading-relaxed">
-            {activeFilter === "all"
+            {searchQuery 
+              ? `We couldn't find any events matching "${searchQuery}". Try a different term or clear the search.`
+              : activeFilter === "all"
               ? "Your event list is empty. Create your first event and start inviting attendees."
               : `You don't have any ${activeFilter} events. Change the filter or create a new one.`}
           </p>
+        {searchQuery ? (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="flex items-center gap-2 px-8 py-4 bg-white/5 text-white rounded-xl font-bold hover:bg-white/10 transition-all border border-white/10"
+          >
+            Clear Search
+          </button>
+        ) : (
           <Link
             href="/dashboard/events/new"
             className="flex items-center gap-2 px-8 py-4 bg-lime text-[#1a1e0a] rounded-xl font-bold hover:bg-lime/90 transition-all border-glow"
@@ -589,13 +615,14 @@ export default function DashboardPage() {
             <PlusCircle className="w-5 h-5" />
             Create Your First Event
           </Link>
+        )}
         </motion.div>
       ) : (
         <motion.div 
           variants={containerVariants}
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
         >
-          {events.map((event) => (
+          {filteredEvents.map((event) => (
             <EventCard 
               key={event._id || event.id} 
               event={event} 

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, X, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AddressAutocompleteProps {
   value: string;
@@ -52,12 +53,9 @@ export default function AddressAutocomplete({
       );
       const data = await res.json();
       
-      // Map GeoJSON features to our expected format
       const formattedResults = (data.features || []).map((feature: any) => {
         const p = feature.properties;
-        // Build a readable address string
         const parts = [p.name, p.street, p.city, p.state, p.country].filter(Boolean);
-        // Remove duplicates like if name is same as city
         const uniqueParts = Array.from(new Set(parts));
         
         return {
@@ -98,40 +96,74 @@ export default function AddressAutocomplete({
     onChange(place.display_name, parseFloat(place.lat), parseFloat(place.lon));
   };
 
-  return (
-    <div className="relative" ref={wrapperRef}>
-      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-        <MapPin className="w-5 h-5 text-white/40" />
-      </div>
-      <input
-        type="text"
-        value={query}
-        onChange={handleInputChange}
-        onFocus={() => { if (results.length > 0) setIsOpen(true) }}
-        disabled={disabled}
-        className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-lime/50 focus:ring-1 focus:ring-lime/50 transition-all placeholder:text-white/20"
-        placeholder={placeholder}
-      />
-      
-      {isLoading && (
-        <div className="absolute right-4 top-3.5">
-          <div className="w-4 h-4 border-2 border-lime border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
+  const clearInput = () => {
+    setQuery("");
+    setResults([]);
+    onChange("", null, null);
+  };
 
-      {isOpen && results.length > 0 && (
-        <ul className="absolute z-50 w-full mt-2 bg-[#1a1e0a] border border-white/10 rounded-xl shadow-xl overflow-hidden">
-          {results.map((place, i) => (
-            <li
-              key={i}
-              onClick={() => handleSelect(place)}
-              className="px-4 py-3 hover:bg-white/10 cursor-pointer text-sm text-white/80 transition-colors border-b border-white/5 last:border-0"
+  return (
+    <div className="relative w-full" ref={wrapperRef}>
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <MapPin className="w-5 h-5 text-white/20 group-focus-within:text-lime transition-colors" />
+        </div>
+        <input
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          onFocus={() => { if (results.length > 0) setIsOpen(true) }}
+          disabled={disabled}
+          className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-11 pr-12 py-3.5 text-sm text-white focus:outline-none focus:border-lime/40 focus:ring-1 focus:ring-lime/40 transition-all placeholder:text-white/20"
+          placeholder={placeholder}
+        />
+        
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 text-lime animate-spin" />
+          ) : query ? (
+            <button
+              onClick={clearInput}
+              className="p-1 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all"
             >
-              {place.display_name}
-            </li>
-          ))}
-        </ul>
-      )}
+              <X className="w-4 h-4" />
+            </button>
+          ) : null}
+        </div>
+      </div>
+      
+      <AnimatePresence>
+        {isOpen && results.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute z-[100] w-full mt-2 bg-[#0a0c04] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden backdrop-blur-xl"
+          >
+            <div className="p-2 border-b border-white/5 bg-white/[0.02]">
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3">Venue Suggestions</p>
+            </div>
+            <ul className="max-h-64 overflow-y-auto custom-scrollbar">
+              {results.map((place, i) => (
+                <li
+                  key={i}
+                  onClick={() => handleSelect(place)}
+                  className="px-4 py-3.5 hover:bg-lime/10 cursor-pointer group transition-all border-b border-white/5 last:border-0"
+                >
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-white/20 mt-0.5 group-hover:text-lime transition-colors" />
+                    <span className="text-sm text-white/70 group-hover:text-white transition-colors leading-tight">
+                      {place.display_name}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

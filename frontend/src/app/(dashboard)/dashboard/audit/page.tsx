@@ -52,12 +52,18 @@ export default function AuditTrailPage() {
     }
   }
 
-  const filteredLogs = logs.filter(log => 
-    log.attendee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    log.attendee_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (log.event_title && log.event_title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    log.to_status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredLogs = logs.filter(log => {
+    const name = log.attendee_name?.toLowerCase() || "";
+    const email = log.attendee_email?.toLowerCase() || "";
+    const event = log.event_title?.toLowerCase() || "";
+    const status = log.to_status?.toLowerCase() || "";
+    const query = searchQuery.toLowerCase();
+    
+    return name.includes(query) || 
+           email.includes(query) || 
+           event.includes(query) || 
+           status.includes(query);
+  });
 
   const getStatusConfig = (status: string) => {
     switch (status?.toLowerCase()) {

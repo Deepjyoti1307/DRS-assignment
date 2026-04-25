@@ -1,233 +1,235 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import {
-  Video,
-  Wrench,
-  Key,
-  Plus,
-  Sparkles,
+  PlusCircle,
   History,
-  BookOpen
+  Layout,
+  ArrowRight,
+  Loader2,
+  Calendar,
+  Sparkles
 } from "lucide-react";
-import { createEvent } from "@/lib/api";
+import { motion } from "framer-motion";
+import { fetchEvents, createEvent, fetchEvent } from "@/lib/api";
+import { Event } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// ─── TEMPLATES ─────────────────────────────────────────────────────────
-
-const TEMPLATES = [
-  {
-    id: "webinar",
-    title: "Webinar",
-    badge: "VIRTUAL",
-    icon: Video,
-    description: "Streaming-ready setup with Q&A integration and post-event analytics.",
-    payload: {
-      title: "New Webinar",
-      description: "Join us for an engaging online webinar.",
-      mode: "online" as const,
-      venue: "Zoom Link TBD",
-      capacity: 500,
-      registration_mode: "open" as const,
-      template_used: "webinar",
-    },
-  },
-  {
-    id: "workshop",
-    title: "Workshop",
-    badge: "HANDS-ON",
-    icon: Wrench,
-    description: "Focus on collaboration with breakout rooms and resource distribution.",
-    payload: {
-      title: "Interactive Workshop",
-      description: "A hands-on session designed to build practical skills.",
-      mode: "online" as const,
-      venue: "Google Meet TBD",
-      capacity: 50,
-      registration_mode: "open" as const,
-      template_used: "workshop",
-    },
-  },
-  {
-    id: "summit",
-    title: "Private Summit",
-    badge: "SECURE",
-    icon: Key,
-    description: "Invite-only structure with advanced permission gates and NDA flows.",
-    payload: {
-      title: "Exclusive Private Summit",
-      description: "A secure, invite-only gathering for key stakeholders.",
-      mode: "offline" as const,
-      venue: "Headquarters",
-      capacity: 100,
-      registration_mode: "shortlisted" as const,
-      template_used: "summit",
-    },
-  },
-];
-
-export default function NewEventTemplateSelection() {
+export default function NewEventPage() {
   const router = useRouter();
   const { getToken } = useAuth();
+  
+  const [recentEvents, setRecentEvents] = useState<Event[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const handleCreate = async (payload: any, templateId: string) => {
-    try {
-      setLoadingId(templateId);
-      const token = await getToken();
-      if (!token) throw new Error("Not authenticated");
+  useEffect(() => {
+    loadRecentEvents();
+  }, []);
 
-      // Set default date to tomorrow
+  async function loadRecentEvents() {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const data = await fetchEvents(token);
+      // Sort by creation date descending and take top 4 for a better grid
+      const sorted = [...data].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ).slice(0, 4);
+      setRecentEvents(sorted);
+    } catch (err) {
+      console.error("Failed to load recent events:", err);
+    } finally {
+      setLoadingRecent(false);
+    }
+  }
+
+  const handleDuplicate = async (eventId: string) => {
+    try {
+      setLoadingId(eventId);
+      const token = await getToken();
+      if (!token) return;
+      
+      const original = await fetchEvent(token, eventId);
+      
+      // Tomorrow at 10 AM default
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(10, 0, 0, 0);
 
-      const eventPayload = {
-        ...payload,
+      const cloned: Partial<Event> = {
+        title: `${original.title} (Copy)`,
+        description: original.description,
+        venue: original.venue,
         date_time: tomorrow.toISOString(),
+        capacity: original.capacity,
+        mode: original.mode,
+        registration_mode: original.registration_mode,
+        status: 'draft',
+      };
+      
+      const created = await createEvent(token, cloned as Event);
+      router.push(`/dashboard/events/${created._id || created.id}/edit`);
+    } catch (err: any) {
+      alert(err.message || "Failed to duplicate event");
+      setLoadingId(null);
+    }
+  };
+
+  const handleCreateBlank = async () => {
+    try {
+      setLoadingId("blank");
+      const token = await getToken();
+      if (!token) return;
+
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(10, 0, 0, 0);
+
+      const payload: Partial<Event> = {
+        title: "Untitled Experience",
+        description: "",
+        venue: "",
+        date_time: tomorrow.toISOString(),
+        capacity: 100,
+        mode: "offline",
+        registration_mode: "open",
+        status: "draft"
       };
 
-      const event = await createEvent(token, eventPayload);
-      const eventId = event._id || event.id;
-      router.push(`/dashboard/events/${eventId}/edit`);
-    } catch (error) {
-      console.error("Failed to create event draft:", error);
-      alert("Failed to initialize event. Please try again.");
+      const created = await createEvent(token, payload as Event);
+      router.push(`/dashboard/events/${created._id || created.id}/edit`);
+    } catch (err: any) {
+      alert(err.message || "Failed to create event");
       setLoadingId(null);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-20">
+    <div className="space-y-12 pb-20 max-w-7xl mx-auto">
       {/* ── Header ── */}
-      <div>
-        <h1 className="text-4xl font-heading font-bold text-white mb-2">Create Event</h1>
-        <p className="text-muted-foreground text-sm">
-          Accelerate your planning process or start from a blank canvas.
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 text-lime font-black uppercase tracking-[0.2em] text-[10px]">
+          <Sparkles className="w-3 h-3" />
+          Event Orchestrator
+        </div>
+        <h1 className="text-5xl font-heading font-bold text-white tracking-tight">
+          Initiate New Experience
+        </h1>
+        <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
+          Choose a blueprint from your history or start with a blank canvas to orchestrate your next masterpiece.
         </p>
       </div>
 
-      {/* ── Template Grid ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Render standard templates */}
-        {TEMPLATES.map((tpl) => (
-          <div
-            key={tpl.id}
-            className="glass-panel rounded-2xl p-6 flex flex-col h-full hover:border-lime/30 transition-all duration-300 relative group"
-          >
-            <div className="w-12 h-12 bg-lime/10 rounded-xl flex items-center justify-center mb-5 border border-lime/20 group-hover:scale-105 transition-transform">
-              <tpl.icon className="w-5 h-5 text-lime" />
-            </div>
-            
-            <div className="flex items-center gap-1.5 mb-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-lime" />
-              <span className="text-[10px] font-bold tracking-widest text-lime uppercase">
-                {tpl.badge}
-              </span>
-            </div>
-
-            <h3 className="text-xl font-heading font-bold text-white mb-2">
-              {tpl.title}
-            </h3>
-            
-            <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-6">
-              {tpl.description}
-            </p>
-
-            <button
-              onClick={() => handleCreate(tpl.payload, tpl.id)}
-              disabled={!!loadingId}
-              className="w-full py-3 bg-lime text-[#1a1e0a] font-bold rounded-xl hover:bg-lime/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {loadingId === tpl.id ? (
-                <span className="animate-pulse">Initializing...</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Blank Canvas Card */}
+        <motion.div
+          whileHover={{ y: -5 }}
+          onClick={handleCreateBlank}
+          className="lg:col-span-1 glass-panel rounded-[2.5rem] p-10 border border-white/5 flex flex-col justify-between group cursor-pointer relative overflow-hidden h-[450px]"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-lime/10 blur-[100px] -mr-32 -mt-32 group-hover:bg-lime/20 transition-all duration-700" />
+          
+          <div className="relative z-10">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-10 border border-white/10 group-hover:border-lime/30 group-hover:bg-lime/10 transition-all duration-500">
+              {loadingId === "blank" ? (
+                <Loader2 className="w-7 h-7 text-lime animate-spin" />
               ) : (
-                <>Use Template <span className="ml-2">→</span></>
+                <PlusCircle className="w-7 h-7 text-white group-hover:text-lime transition-all" />
               )}
-            </button>
-          </div>
-        ))}
-
-        {/* Blank Canvas */}
-        <div className="rounded-2xl p-6 flex flex-col h-full border-2 border-dashed border-white/10 hover:border-white/30 transition-all duration-300 items-center justify-center text-center bg-white/[0.01]">
-          <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center mb-6 group-hover:bg-white/10 transition-colors">
-            <Plus className="w-6 h-6 text-white/70" />
+            </div>
+            <h2 className="text-4xl font-heading font-bold text-white mb-6">Blank Canvas</h2>
+            <p className="text-muted-foreground text-base leading-relaxed">
+              Full creative sovereignty. Define every touchpoint of your event from the ground up with no constraints.
+            </p>
           </div>
           
-          <h3 className="text-xl font-heading font-bold text-white mb-2">
-            Blank Canvas
-          </h3>
-          
-          <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-[200px]">
-            Start from scratch for a completely bespoke experience.
-          </p>
+          <div className="flex items-center justify-between relative z-10">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-lime group-hover:tracking-[0.3em] transition-all">Start Drafting</span>
+            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-lime group-hover:text-olive-dark transition-all duration-500">
+              <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </motion.div>
 
-          <button
-            onClick={() =>
-              handleCreate(
-                {
-                  title: "Untitled Event",
-                  description: "",
-                  mode: "online",
-                  venue: "",
-                  capacity: 100,
-                  registration_mode: "open",
-                },
-                "blank"
-              )
-            }
-            disabled={!!loadingId}
-            className="text-xs font-bold tracking-widest text-white/70 hover:text-white uppercase transition-colors"
-          >
-            {loadingId === "blank" ? "CREATING..." : "CONFIGURE MANUALLY"}
-          </button>
+        {/* History / Templates Section */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-white/30 flex items-center gap-3">
+              <div className="w-8 h-[1px] bg-white/10" />
+              History & Recent Blueprints
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {loadingRecent ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-36 glass-panel rounded-3xl animate-pulse border border-white/5" />
+              ))
+            ) : recentEvents.length === 0 ? (
+              <div className="col-span-2 py-20 glass-panel rounded-[2rem] flex flex-col items-center justify-center border border-dashed border-white/10 text-center">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/5">
+                  <History className="w-7 h-7 text-white/10" />
+                </div>
+                <p className="text-white/60 font-bold mb-1">No event history found</p>
+                <p className="text-muted-foreground text-xs max-w-[240px]">Your previous events will automatically appear here to be used as templates.</p>
+              </div>
+            ) : (
+              recentEvents.map((event, idx) => (
+                <motion.div
+                  key={event._id || event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.02)" }}
+                  onClick={() => handleDuplicate(event._id || event.id!)}
+                  className="glass-panel rounded-[2rem] p-6 border border-white/5 flex flex-col justify-between cursor-pointer group transition-all duration-500 h-44 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-8 h-8 rounded-lg bg-lime flex items-center justify-center text-olive-dark">
+                      <PlusCircle className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/10 group-hover:border-lime/20 group-hover:bg-lime/5 transition-all">
+                      {loadingId === (event._id || event.id) ? (
+                        <Loader2 className="w-5 h-5 text-lime animate-spin" />
+                      ) : (
+                        <Layout className="w-5 h-5 text-white/30 group-hover:text-lime transition-all" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base font-bold text-white group-hover:text-lime transition-colors truncate pr-6">
+                        {event.title}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Calendar className="w-3 h-3 text-white/20" />
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest truncate">
+                          {event.venue || "Global Event"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                    <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/30 group-hover:text-white transition-colors">Clone as template</span>
+                    <ArrowRight className="w-4 h-4 text-white/10 group-hover:text-lime group-hover:translate-x-1 transition-all" />
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── Recent Custom Templates ── */}
-      <div className="pt-8 border-t border-white/5">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-heading font-bold text-white">
-            Recent Custom Templates
-          </h2>
-          <button className="text-lime text-sm font-semibold hover:text-lime/80 transition-colors flex items-center gap-1">
-            View All →
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="glass-panel rounded-xl p-5 flex items-center gap-4 hover:bg-white/[0.05] cursor-pointer transition-colors">
-            <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-white/60" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Tech Conference 2024</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">Modified 2 days ago</p>
-            </div>
-          </div>
-          
-          <div className="glass-panel rounded-xl p-5 flex items-center gap-4 hover:bg-white/[0.05] cursor-pointer transition-colors">
-            <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-              <History className="w-4 h-4 text-white/60" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Internal Hackathon</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">Used 1 week ago</p>
-            </div>
-          </div>
-
-          <div className="glass-panel rounded-xl p-5 flex items-center gap-4 hover:bg-white/[0.05] cursor-pointer transition-colors">
-            <div className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-              <BookOpen className="w-4 h-4 text-white/60" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Monthly Board Meeting</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">Last used Jan 12</p>
-            </div>
-          </div>
-        </div>
+      {/* ── Visual Footer ── */}
+      <div className="pt-20 text-center">
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/10">
+          Digital Registration System • Next Generation
+        </p>
       </div>
     </div>
   );

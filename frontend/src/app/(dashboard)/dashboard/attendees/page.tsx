@@ -105,10 +105,12 @@ export default function GlobalAttendeesPage() {
     }
   };
 
-  const filteredAttendees = attendees.filter(a =>
-    a.attendee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.attendee_email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredAttendees = attendees.filter(a => {
+    const name = a.attendee_name?.toLowerCase() || "";
+    const email = a.attendee_email?.toLowerCase() || "";
+    const query = searchQuery.toLowerCase();
+    return name.includes(query) || email.includes(query);
+  });
 
   const getStatusColor = (status: RSVPStatus) => {
     switch (status) {
