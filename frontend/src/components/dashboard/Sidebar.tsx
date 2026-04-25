@@ -10,7 +10,10 @@ import {
   Settings, 
   Zap,
   PlusCircle,
-  History
+  History,
+  Menu,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserButton } from "@clerk/nextjs";
@@ -23,21 +26,45 @@ const NAV_ITEMS = [
   { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+  onToggle: () => void;
+}
+
+export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 h-screen fixed left-0 top-0 sidebar-glass flex flex-col z-50">
-      <div className="p-8">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-lime rounded-lg flex items-center justify-center border-glow group-hover:scale-110 transition-transform">
-            <span className="text-olive-dark font-black text-xl">E</span>
+    <aside className={cn(
+      "h-screen fixed left-0 top-0 sidebar-glass flex flex-col z-[100] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-r border-white/5",
+      isCollapsed ? "w-[80px]" : "w-64"
+    )}>
+      {/* Header & Toggle */}
+      <div className={cn(
+        "p-6 flex items-center justify-between",
+        isCollapsed ? "flex-col gap-6" : "flex-row"
+      )}>
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 bg-lime rounded-2xl flex items-center justify-center border-glow group-hover:scale-110 transition-all duration-500 shadow-[0_0_20px_rgba(193,217,73,0.3)]">
+            <span className="text-olive-dark font-black text-xl leading-none">E</span>
           </div>
-          <span className="font-heading font-bold text-xl tracking-tight">Eventic</span>
+          {!isCollapsed && (
+            <span className="font-heading font-black text-2xl tracking-tighter text-white transition-all duration-500">
+              Eventic
+            </span>
+          )}
         </Link>
+        
+        <button 
+          onClick={onToggle}
+          className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+        >
+          {isCollapsed ? <Menu className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+        </button>
       </div>
 
-      <nav className="flex-1 px-4 py-2 space-y-1">
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-2">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -45,37 +72,62 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
                 isActive 
-                  ? "bg-lime/10 text-lime border-glow border border-lime/20" 
-                  : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                  ? "bg-lime/10 text-lime border-white/5" 
+                  : "text-white/40 hover:text-white hover:bg-white/5"
               )}
             >
+              {isActive && (
+                <div className="absolute left-0 w-1 h-6 bg-lime rounded-r-full shadow-[4px_0_15px_rgba(193,217,73,0.5)]" />
+              )}
               <item.icon className={cn(
-                "w-5 h-5",
-                isActive ? "text-lime" : "group-hover:text-lime transition-colors"
+                "w-5 h-5 shrink-0 transition-transform duration-300 group-hover:scale-110",
+                isActive ? "text-lime" : "text-white/40 group-hover:text-white"
               )} />
-              <span className="font-medium">{item.label}</span>
+              {!isCollapsed && (
+                <span className="font-bold text-[13px] uppercase tracking-widest leading-none">
+                  {item.label}
+                </span>
+              )}
+              
+              {/* Tooltip for collapsed mode */}
+              {isCollapsed && (
+                <div className="absolute left-full ml-4 px-3 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 translate-x-[-10px] group-hover:translate-x-0 shadow-2xl z-[110] whitespace-nowrap">
+                  {item.label}
+                </div>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 mt-auto border-t border-white/5">
+      {/* Bottom Actions */}
+      <div className="p-4 mt-auto border-t border-white/5 space-y-4">
         <Link 
           href="/dashboard/events/new"
-          className="flex items-center justify-center gap-2 w-full py-4 bg-lime text-[#1a1e0a] rounded-xl font-bold hover:bg-lime/90 transition-colors mb-4 border-glow"
+          className={cn(
+            "flex items-center justify-center gap-3 w-full bg-lime text-olive-dark rounded-2xl font-black uppercase tracking-widest transition-all duration-300 border-glow shadow-[0_10px_20px_rgba(193,217,73,0.2)] hover:shadow-[0_15px_30px_rgba(193,217,73,0.4)] hover:scale-[1.02]",
+            isCollapsed ? "p-3.5" : "py-4 px-2 text-[11px]"
+          )}
         >
-          <PlusCircle className="w-5 h-5" />
-          Create Event
+          <PlusCircle className="w-5 h-5 shrink-0" />
+          {!isCollapsed && <span>Create Event</span>}
         </Link>
         
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl glass-panel">
-          <UserButton afterSignOutUrl="/" />
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-semibold truncate text-white">Organizer</span>
-            <span className="text-xs text-muted-foreground truncate">Dashboard</span>
+        <div className={cn(
+          "flex items-center gap-3 p-3 rounded-2xl glass-panel border border-white/10 transition-all duration-500",
+          isCollapsed ? "justify-center" : "justify-start"
+        )}>
+          <div className="shrink-0 scale-110">
+            <UserButton afterSignOutUrl="/" />
           </div>
+          {!isCollapsed && (
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-xs font-black uppercase tracking-widest truncate text-white leading-tight">Organizer</span>
+              <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter truncate">Premium Hub</span>
+            </div>
+          )}
         </div>
       </div>
     </aside>
