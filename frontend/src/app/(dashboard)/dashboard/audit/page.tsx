@@ -14,7 +14,7 @@ import {
   Filter
 } from "lucide-react";
 import { format } from "date-fns";
-import { fetchAuditLogs } from "@/lib/api";
+import { fetchAuditLogs } from "../../../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuditTrailPage() {

@@ -25,7 +25,7 @@ import {
   rejectRegistration,
   revokeRegistration,
   fetchSettings
-} from "@/lib/api";
+} from "../../../../lib/api";
 import type { Registration, RSVPStatus } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
 
