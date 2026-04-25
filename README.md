@@ -1,5 +1,4 @@
-# Eventic: Production-Grade Event Management Ecosystem
-
+# Eventic: Mini Event Management Platform
 Eventic is a high-performance, full-stack event management platform designed for organizers to create, manage, and track event registrations with atomic integrity and premium notification systems.
 
 ## 🚀 Tech Stack
