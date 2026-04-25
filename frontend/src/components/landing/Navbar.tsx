@@ -16,10 +16,10 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <nav className="relative flex items-center justify-between h-14">
           {/* ── Logo (Left) ── */}
-          <div className="w-1/3 flex items-center">
-            <Link href="/" className="flex items-center gap-3 z-50 group">
-              <img src="/logo.png" alt="Logo" className="w-9 h-9 object-contain group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-3xl font-bold tracking-tight text-white drop-shadow-md">
+          <div className="flex-1 md:w-1/3 flex items-center">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 z-50 group">
+              <img src="/logo.png" alt="Logo" className="w-8 h-8 sm:w-9 sm:h-9 object-contain group-hover:scale-110 transition-transform duration-500" />
+              <span className="text-xl sm:text-3xl font-black tracking-tighter text-white drop-shadow-md">
                 {BRAND_NAME}
               </span>
             </Link>
@@ -31,7 +31,7 @@ export default function Navbar() {
           </div>
 
           {/* ── Right side (Empty or UserButton) ── */}
-          <div className="w-1/3 flex items-center justify-end gap-3 z-50">
+          <div className="flex-1 md:w-1/3 flex items-center justify-end gap-3 z-50">
             <SignedIn>
               <UserButton
                 afterSignOutUrl="/"
@@ -45,7 +45,7 @@ export default function Navbar() {
 
             {/* ── Mobile Toggle ── */}
             <button
-              className="md:hidden p-2 text-gray-300 bg-white/5 rounded-full backdrop-blur-md border border-white/10"
+              className="md:hidden p-2.5 text-white bg-white/5 rounded-xl backdrop-blur-md border border-white/10 transition-all hover:bg-white/10"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -56,28 +56,24 @@ export default function Navbar() {
 
         {/* ── Mobile Menu ── */}
         {mobileOpen && (
-          <div className="md:hidden mt-4 p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl animate-fade-up">
-            <Link
-              href="#explore"
-              className="block px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Explore
-            </Link>
-            <Link
-              href="#features"
-              className="block px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Features
-            </Link>
-            <Link
-              href="#pricing"
-              className="block px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Pricing
-            </Link>
+          <div className="md:hidden mt-4 p-2 rounded-[2rem] bg-background/80 backdrop-blur-2xl border border-white/10 shadow-2xl animate-fade-up overflow-hidden">
+            <div className="flex flex-col p-2 gap-1">
+              {[
+                { label: "Explore", href: "#explore" },
+                { label: "Features", href: "#features" },
+                { label: "Pricing", href: "#pricing" },
+                { label: "Dashboard", href: "/dashboard" },
+              ].map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </div>

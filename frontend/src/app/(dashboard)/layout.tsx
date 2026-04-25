@@ -6,20 +6,33 @@ import Footer from "@/components/landing/Footer";
 import { DashboardTransition } from "@/components/dashboard/DashboardTransition";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { cn } from "@/lib/utils";
+import { Menu } from "lucide-react";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Default collapsed (hidden on mobile)
 
   return (
     <div className="flex min-h-screen bg-background gradient-mesh overflow-x-hidden">
+      {/* Mobile Menu Trigger */}
+      <button
+        onClick={() => setIsCollapsed(false)}
+        className={cn(
+          "fixed top-6 left-6 z-[80] p-3 rounded-xl glass-panel md:hidden transition-all duration-300",
+          !isCollapsed && "opacity-0 pointer-events-none"
+        )}
+      >
+        <Menu className="w-5 h-5 text-white" />
+      </button>
+
       <Sidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
       <main className={cn(
         "flex-1 min-h-screen relative overflow-y-auto flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
-        isCollapsed ? "ml-[80px]" : "ml-64"
+        "ml-0 md:ml-64",
+        isCollapsed && "md:ml-[80px]"
       )}>
         {/* Subtle top decoration */}
         <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-lime/5 to-transparent pointer-events-none" />

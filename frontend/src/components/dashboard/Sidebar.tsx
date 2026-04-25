@@ -35,15 +35,24 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className={cn(
-      "h-screen fixed left-0 top-0 sidebar-glass flex flex-col z-[100] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-r border-white/5",
-      isCollapsed ? "w-[80px]" : "w-64"
-    )}>
-      {/* Header & Toggle */}
-      <div className={cn(
-        "p-6 flex items-center justify-between",
-        isCollapsed ? "flex-col gap-6" : "flex-row"
+    <>
+      {/* Mobile Overlay */}
+      {!isCollapsed && (
+        <div 
+          className="fixed inset-0 bg-background/60 backdrop-blur-sm z-[90] md:hidden transition-opacity duration-500 animate-in fade-in"
+          onClick={onToggle}
+        />
+      )}
+      
+      <aside className={cn(
+        "h-screen fixed left-0 top-0 sidebar-glass flex flex-col z-[100] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-r border-white/5",
+        isCollapsed ? "w-[80px] -translate-x-full md:translate-x-0" : "w-64 translate-x-0"
       )}>
+        {/* Header & Toggle */}
+        <div className={cn(
+          "p-6 flex items-center justify-between",
+          isCollapsed ? "flex-col gap-6" : "flex-row"
+        )}>
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
             <img src="/logo.png" alt="Eventic Logo" className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(193,217,73,0.3)]" />
@@ -131,5 +140,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </div>
       </div>
     </aside>
+  </>
   );
 }
