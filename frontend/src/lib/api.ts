@@ -3,7 +3,8 @@
  * Uses the Clerk session token for authenticated requests.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const envUrl = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = (envUrl ? envUrl.replace(/\/$/, "") : "http://localhost:8000");
 
 async function apiFetch<T>(
   path: string,

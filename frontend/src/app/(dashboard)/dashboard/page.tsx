@@ -417,10 +417,12 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <span className="text-xl">⚠️</span>
             <div>
-              <p className="text-red-400 font-semibold text-sm">Error: {error}</p>
+              <p className="text-red-400 font-semibold text-sm">Connection Failed</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Make sure the FastAPI server is running on{" "}
-                <code className="text-lime bg-lime/10 px-1 rounded">localhost:8000</code>
+                {error}
+              </p>
+              <p className="text-[10px] text-white/20 mt-1 font-mono">
+                Attempted: {process.env.NEXT_PUBLIC_API_URL || "localhost:8000"}
               </p>
             </div>
           </div>
