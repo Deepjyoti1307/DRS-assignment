@@ -43,7 +43,7 @@ export default function HeroSection() {
 
         {/* ── Headline ── */}
         <h1
-          className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tighter mb-8 animate-fade-up text-white"
+          className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[0.9] tracking-tighter mb-8 animate-fade-up text-white"
           style={{ animationDelay: "0.1s" }}
         >
           {HERO_TITLE_PARTS.line1_start}
@@ -58,7 +58,7 @@ export default function HeroSection() {
 
         {/* ── Description ── */}
         <p
-          className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-up font-medium"
+          className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-up font-medium"
           style={{ animationDelay: "0.2s" }}
         >
           {HERO_DESCRIPTION}
