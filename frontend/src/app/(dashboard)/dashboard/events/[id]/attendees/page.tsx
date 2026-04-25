@@ -65,6 +65,8 @@ export default function EventAttendeesPage() {
   async function loadData() {
     try {
       setLoading(true);
+      const api = await import("../../../../lib/api");
+      console.log("Fetching from:", api.API_BASE_URL);
       const token = await getToken();
       if (!token) return;
 

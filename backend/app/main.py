@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -33,8 +34,15 @@ def create_app() -> FastAPI:
 
 	app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
+	@app.get("/health")
+	async def health_check():
+		return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
 	@app.on_event("startup")
 	async def on_startup() -> None:
+		import os
+		if not os.path.exists("uploads"):
+			os.makedirs("uploads")
 		await init_db()
 
 	return app
