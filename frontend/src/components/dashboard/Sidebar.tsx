@@ -134,7 +134,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           {!isCollapsed && (
             <div className="flex flex-col overflow-hidden">
               <span className="text-xs font-black uppercase tracking-widest truncate text-white leading-tight">Organizer</span>
-              <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter truncate">Premium Hub</span>
+              <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter truncate">Verified Account</span>
             </div>
           )}
         </div>

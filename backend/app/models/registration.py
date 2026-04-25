@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Dict, Any, Set
 
@@ -61,7 +61,7 @@ class StatusHistoryItem(BaseModel):
     """Represents a single entry in the registration's audit trail."""
     from_status: Optional[RSVPStatus] = None
     to_status: RSVPStatus
-    changed_at: datetime = Field(default_factory=datetime.utcnow)
+    changed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     changed_by: str = "system"  # User ID or "system"
     reason: Optional[str] = None
 
@@ -92,8 +92,8 @@ class Registration(Document):
     sync_error_message: Optional[str] = None
 
     # ── Timestamps ──
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "registrations"

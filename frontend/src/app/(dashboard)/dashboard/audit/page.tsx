@@ -11,11 +11,18 @@ import {
   AlertCircle,
   RefreshCw,
   Search,
-  Filter
+  ArrowRight,
+  ShieldCheck,
+  XCircle,
+  UserPlus,
+  CheckCircle2,
+  Timer,
+  Zap
 } from "lucide-react";
 import { format } from "date-fns";
 import { fetchAuditLogs } from "../../../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function AuditTrailPage() {
   const { getToken } = useAuth();
@@ -48,138 +55,217 @@ export default function AuditTrailPage() {
   const filteredLogs = logs.filter(log => 
     log.attendee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     log.attendee_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    log.status.toLowerCase().includes(searchQuery.toLowerCase())
+    (log.event_title && log.event_title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    log.to_status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusConfig = (status: string) => {
+    switch (status?.toLowerCase()) {
       case "approved":
+        return { color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20", icon: ShieldCheck };
       case "registered":
-        return "text-emerald-400 bg-emerald-400/10 border-emerald-400/20";
+        return { color: "text-lime bg-lime/10 border-lime/20", icon: UserPlus };
+      case "checked_in":
+        return { color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20", icon: CheckCircle2 };
+      case "shortlisted":
+        return { color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20", icon: Zap };
       case "rejected":
       case "revoked":
-        return "text-rose-400 bg-rose-400/10 border-rose-400/20";
+        return { color: "text-rose-400 bg-rose-400/10 border-rose-400/20", icon: XCircle };
       case "pending":
-        return "text-amber-400 bg-amber-400/10 border-amber-400/20";
+        return { color: "text-amber-400 bg-amber-400/10 border-amber-400/20", icon: Timer };
       default:
-        return "text-white/40 bg-white/5 border-white/10";
+        return { color: "text-white/40 bg-white/5 border-white/10", icon: History };
     }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <p className="text-xs text-lime font-semibold uppercase tracking-widest mb-1">
-            System Logs
-          </p>
-          <h1 className="text-4xl font-heading font-bold text-white mb-1">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="px-2 py-1 bg-lime/10 border border-lime/20 rounded text-[10px] font-black text-lime uppercase tracking-[0.2em]">
+              Security Protocol
+            </div>
+          </div>
+          <h1 className="text-5xl font-heading font-black text-white tracking-tighter">
             Audit Trail
           </h1>
-          <p className="text-muted-foreground text-sm">
-            A comprehensive record of all registration status transitions.
+          <p className="text-white/40 text-sm mt-2 max-w-md font-medium leading-relaxed">
+            Real-time synchronization of all registration state transitions across your event ecosystem.
           </p>
         </div>
+        
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-lime transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-lime transition-all duration-300" />
             <input 
               type="text" 
-              placeholder="Search by name, email or status..."
+              placeholder="Search feed..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-lime/50 focus:border-lime/50 transition-all w-80"
+              className="bg-white/[0.03] border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm font-bold text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-lime/20 focus:border-lime/40 transition-all w-full md:w-80 sidebar-glass"
             />
           </div>
           <button 
             onClick={loadData}
-            className="p-2.5 rounded-xl glass-panel text-muted-foreground hover:text-white transition-colors"
-            title="Refresh"
+            className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 text-white/40 hover:text-white hover:border-white/20 transition-all group"
+            title="Refresh Feed"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn("w-5 h-5 transition-transform duration-500", loading && "animate-spin text-lime")} />
           </button>
         </div>
       </div>
 
       {/* Feed Container */}
-      <div className="glass-panel rounded-3xl p-8 min-h-[500px]">
+      <div className="relative">
         {loading && !logs.length ? (
-          <div className="flex flex-col items-center justify-center py-40">
-            <Loader2 className="w-10 h-10 animate-spin text-lime mb-4" />
-            <p className="text-muted-foreground">Streaming audit feed...</p>
+          <div className="glass-panel rounded-[2rem] p-8 flex flex-col items-center justify-center py-48 border-white/5">
+            <div className="relative">
+              <Loader2 className="w-12 h-12 animate-spin text-lime" />
+              <div className="absolute inset-0 blur-xl bg-lime/20 animate-pulse" />
+            </div>
+            <p className="text-white/40 font-bold uppercase tracking-widest text-[10px] mt-6">Streaming live audit logs...</p>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-40 text-center">
-            <AlertCircle className="w-12 h-12 text-rose-500 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Feed Interrupted</h3>
-            <p className="text-muted-foreground max-w-sm mb-8">{error}</p>
-            <button onClick={loadData} className="px-8 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold transition-all border border-white/10">Reconnect</button>
+          <div className="glass-panel rounded-[2rem] p-8 flex flex-col items-center justify-center py-40 text-center border-rose-500/10">
+            <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mb-6 border border-rose-500/20">
+              <AlertCircle className="w-10 h-10 text-rose-500" />
+            </div>
+            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">System Interruption</h3>
+            <p className="text-white/40 max-w-sm mb-8 font-medium">{error}</p>
+            <button 
+              onClick={loadData} 
+              className="px-10 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/10"
+            >
+              Reconnect Uplink
+            </button>
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-40 text-center">
-            <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mb-6 border border-white/10">
-              <History className="w-10 h-10 text-white/10" />
+          <div className="glass-panel rounded-[2rem] p-8 flex flex-col items-center justify-center py-40 text-center border-white/5">
+            <div className="w-24 h-24 bg-white/[0.02] rounded-[2rem] flex items-center justify-center mb-8 border border-white/5 group">
+              <History className="w-10 h-10 text-white/10 group-hover:text-white/20 transition-colors" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">No activity recorded</h3>
-            <p className="text-muted-foreground max-w-sm">When attendees register or their status changes, logs will materialize here.</p>
+            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Zero Activity Detected</h3>
+            <p className="text-white/40 max-w-sm font-medium leading-relaxed">No logs match your current search parameters. New entries will materialize here automatically.</p>
           </div>
         ) : (
-          <div className="relative pl-8 space-y-12 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[1px] before:bg-white/10">
-            {filteredLogs.map((log, idx) => (
-              <motion.div 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                key={idx} 
-                className="relative"
-              >
-                {/* Timeline Dot */}
-                <div className="absolute -left-[41px] top-1.5 w-[14px] h-[14px] rounded-full ring-8 ring-[#0f1108] bg-white/20 border-2 border-white/10" />
-                
-                <div className="flex items-start justify-between gap-8 group">
-                  <div className="space-y-3 flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm font-black text-white/40 group-hover:bg-lime/10 group-hover:border-lime/20 group-hover:text-lime transition-all">
-                        {log.attendee_name.charAt(0).toUpperCase()}
+          <div className="space-y-4">
+            <AnimatePresence mode="popLayout">
+              {filteredLogs.map((log, idx) => {
+                const toConfig = getStatusConfig(log.to_status);
+                const fromConfig = getStatusConfig(log.from_status || "new");
+                const StatusIcon = toConfig.icon;
+
+                return (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ 
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                      delay: idx * 0.03 
+                    }}
+                    key={`${log.registration_id}-${log.changed_at}-${idx}`} 
+                    className="group relative overflow-hidden glass-panel rounded-3xl p-6 border border-white/5 hover:border-white/10 hover:bg-white/[0.02] transition-all duration-500"
+                  >
+                    {/* Background Decorative Element */}
+                    <div className={cn(
+                      "absolute -right-20 -top-20 w-64 h-64 blur-[100px] opacity-0 group-hover:opacity-10 transition-opacity duration-1000 pointer-events-none",
+                      toConfig.color.split(' ')[1].replace('bg-', 'bg-')
+                    )} />
+
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+                      {/* Left Side: Identity & Context */}
+                      <div className="flex items-center gap-6">
+                        <div className={cn(
+                          "w-16 h-16 rounded-[1.25rem] border flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-2xl shadow-black/40",
+                          toConfig.color
+                        )}>
+                          <StatusIcon className="w-8 h-8" />
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-black text-white tracking-tight leading-none">
+                              {log.attendee_name}
+                            </h3>
+                            <div className="px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-black text-white/30 uppercase tracking-widest">
+                              ID: {log.registration_id.slice(-6)}
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-white/40">
+                              <User className="w-3 h-3" />
+                              {log.attendee_email}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-lime/60">
+                              <Zap className="w-3 h-3" />
+                              {log.event_title}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-white leading-none">
-                          {log.attendee_name}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-mono uppercase tracking-widest">
-                          {log.attendee_email}
-                        </p>
+
+                      {/* Middle: Transition Logic */}
+                      <div className="flex items-center gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                        <div className="flex flex-col items-center gap-1">
+                           <span className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none">Original</span>
+                           <span className={cn(
+                             "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] border transition-all duration-500",
+                             fromConfig.color
+                           )}>
+                             {log.from_status || "INITIAL"}
+                           </span>
+                        </div>
+
+                        <ArrowRight className="w-5 h-5 text-white/10 group-hover:text-white/40 transition-all group-hover:translate-x-1" />
+
+                        <div className="flex flex-col items-center gap-1">
+                           <span className="text-[9px] font-black text-lime/40 uppercase tracking-widest leading-none">Modified</span>
+                           <span className={cn(
+                             "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] border transition-all duration-500 shadow-lg shadow-black/20",
+                             toConfig.color
+                           )}>
+                             {log.to_status}
+                           </span>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Transitioned to</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${getStatusColor(log.status)}`}>
-                        {log.status}
-                      </span>
+
+                      {/* Right Side: Timestamp & Metadata */}
+                      <div className="text-right flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4 lg:gap-2">
+                        <div className="flex items-center gap-2 text-white group-hover:text-lime transition-colors">
+                          <Clock className="w-4 h-4 text-white/20 group-hover:text-lime/60" />
+                          <span className="text-sm font-black tabular-nums tracking-tight">
+                            {format(new Date(log.changed_at), "HH:mm:ss")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-white/20 font-bold uppercase tracking-[0.2em] text-[9px]">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {format(new Date(log.changed_at), "MMM dd, yyyy")}
+                        </div>
+                      </div>
                     </div>
 
+                    {/* Reason / Notes if available */}
                     {log.reason && (
-                      <div className="p-3 bg-white/[0.02] rounded-xl text-xs text-muted-foreground italic border border-white/5 max-w-xl">
-                        "{log.reason}"
+                      <div className="mt-6 pt-6 border-t border-white/5 flex items-start gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                          <AlertCircle className="w-4 h-4 text-white/20" />
+                        </div>
+                        <p className="text-[13px] text-white/40 font-medium italic leading-relaxed">
+                          "{log.reason}"
+                        </p>
                       </div>
                     )}
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="flex items-center justify-end gap-2 text-xs font-bold text-white/20 group-hover:text-lime/60 transition-colors mb-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {format(new Date(log.changed_at), "HH:mm:ss")}
-                    </div>
-                    <div className="flex items-center justify-end gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                      <Calendar className="w-3 h-3" />
-                      {format(new Date(log.changed_at), "MMM d, yyyy")}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>

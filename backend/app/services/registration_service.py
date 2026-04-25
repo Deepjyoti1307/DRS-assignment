@@ -347,22 +347,31 @@ async def update_registration_status(
 
 async def get_audit_logs(organizer_id: str, limit: int = 100) -> List[dict]:
     """
-    Returns a flattened feed of status transitions across all registrations.
+    Returns a flattened feed of status transitions across all registrations,
+    enriched with event titles.
     """
     # Fetch registrations with their history
     regs = await Registration.find(Registration.organizer_id == organizer_id).to_list()
     
+    # Batch fetch event titles for enrichment
+    event_ids = list(set(r.event_id for r in regs))
+    events = await Event.find(In(Event.id, [PydanticObjectId(eid) for eid in event_ids])).to_list()
+    event_map = {str(e.id): e.title for e in events}
+    
     # Flatten history items
     feed = []
     for r in regs:
+        event_title = event_map.get(r.event_id, "Unknown Event")
         for h in r.status_history:
             feed.append({
                 "registration_id": str(r.id),
                 "attendee_name": r.attendee_name,
                 "attendee_email": r.attendee_email,
                 "event_id": r.event_id,
+                "event_title": event_title,
                 "from_status": h.from_status,
                 "to_status": h.to_status,
+                "status": h.to_status, # Alias for frontend compatibility
                 "changed_at": h.changed_at,
                 "changed_by": h.changed_by,
                 "reason": h.reason
