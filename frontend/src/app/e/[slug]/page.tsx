@@ -89,7 +89,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
   const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, "0");
   const offsetMins = String(absOffset % 60).padStart(2, "0");
   const utcOffset = `UTC${sign}${offsetHours}:${offsetMins}`;
-  
+
   const isRegistrationOpen = availability.state === "open";
   const requiresPhone = availability.requires_phone === true;
   const statusColors = {
@@ -119,7 +119,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-12 md:py-20">
-        
+
         {/* ── Top Section ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24">
           <div className="space-y-8">
@@ -179,13 +179,13 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
 
         {/* ── Middle Section ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-          
+
           <div className="lg:col-span-7 space-y-8">
             {/* Mock Schedule matching the design */}
             <div className="glass-panel rounded-2xl p-8 border border-white/5">
               <h2 className="text-sm font-bold text-white mb-8">Event Schedule</h2>
               <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
-                
+
                 <div className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                   <div className="hidden md:flex flex-1 justify-end shrink-0 text-right pr-8">
                     <span className="font-mono text-lime font-bold">09:00</span>
@@ -236,7 +236,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
             {/* Registration Box */}
             <div className="glass-panel rounded-2xl p-8 border border-white/5 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lime to-emerald-400"></div>
-              
+
               <div className="flex items-end justify-between mb-8">
                 <div>
                   <h2 className="text-lg font-heading font-bold text-white mb-1">Register</h2>
@@ -322,7 +322,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
                   >
                     {regStatus === "loading" ? "Processing..." : "Complete Registration"}
                   </button>
-                  
+
                   <p className="text-[10px] text-center text-white/40 mt-4">
                     By registering, you agree to our <a href="#" className="underline hover:text-white">Terms</a> and <a href="#" className="underline hover:text-white">Privacy Policy</a>.
                   </p>
@@ -358,12 +358,12 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
                 </p>
               </div>
             </div>
-            
+
             <div className="h-[400px] w-full rounded-2xl overflow-hidden glass-panel border border-white/5 p-2">
-              <MapDisplay 
-                lat={event.location_lat} 
-                lng={event.location_lng} 
-                venueName={event.venue} 
+              <MapDisplay
+                lat={event.location_lat}
+                lng={event.location_lng}
+                venueName={event.venue}
               />
             </div>
           </div>

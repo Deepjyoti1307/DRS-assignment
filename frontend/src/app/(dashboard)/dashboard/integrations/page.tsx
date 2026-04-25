@@ -3,9 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { 
-  Zap, 
-  Settings, 
+import {
+  Zap,
+  Settings,
   ArrowRight,
   ShieldCheck,
   RefreshCw,
@@ -39,7 +39,7 @@ export default function IntegrationsPage() {
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
             <Bot size={120} />
           </div>
-          
+
           <div className="flex items-center justify-between mb-8">
             <div className="w-16 h-16 bg-lime rounded-2xl flex items-center justify-center border-glow">
               <Bot className="text-olive-dark w-10 h-10" />
@@ -68,7 +68,7 @@ export default function IntegrationsPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <Link 
+            <Link
               href="/dashboard/settings"
               className="flex items-center justify-center gap-2 w-full py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold transition-all group/btn border border-white/5"
             >
@@ -80,7 +80,7 @@ export default function IntegrationsPage() {
               onClick={async () => {
                 const confirm = window.confirm("This will sync ALL existing attendees to HubSpot. Continue?");
                 if (!confirm) return;
-                
+
                 try {
                   const token = await getToken();
                   if (!token) {

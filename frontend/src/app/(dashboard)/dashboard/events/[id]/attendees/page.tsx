@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { 
-  Users, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
+import {
+  Users,
+  CheckCircle2,
+  XCircle,
+  Clock,
   ArrowLeft,
   Mail,
   Search,
@@ -20,10 +20,10 @@ import {
   ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
-import { 
-  fetchRegistrations, 
-  approveRegistration, 
-  rejectRegistration, 
+import {
+  fetchRegistrations,
+  approveRegistration,
+  rejectRegistration,
   revokeRegistration,
   checkInRegistration,
   fetchEvent,
@@ -37,7 +37,7 @@ export default function EventAttendeesPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const { getToken } = useAuth();
-  
+
   const [event, setEvent] = useState<Event | null>(null);
   const [attendees, setAttendees] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +112,7 @@ export default function EventAttendeesPage() {
     }
   };
 
-  const filteredAttendees = attendees.filter(a => 
+  const filteredAttendees = attendees.filter(a =>
     a.attendee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.attendee_email.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -137,36 +137,36 @@ export default function EventAttendeesPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-6">
-           <button 
-             onClick={() => router.back()}
-             className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center hover:bg-white/10 transition-all border border-white/5"
-           >
-             <ArrowLeft className="w-5 h-5 text-white" />
-           </button>
-           <div>
-             <p className="text-xs text-lime font-semibold uppercase tracking-widest mb-1">
-               {event?.title || "Event Records"}
-             </p>
-             <h1 className="text-4xl font-heading font-bold text-white mb-1">
-               Attendee List
-             </h1>
-             <p className="text-muted-foreground text-sm">
-               Manage specific entry permits and track registration lifecycle.
-             </p>
-           </div>
+          <button
+            onClick={() => router.back()}
+            className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center hover:bg-white/10 transition-all border border-white/5"
+          >
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </button>
+          <div>
+            <p className="text-xs text-lime font-semibold uppercase tracking-widest mb-1">
+              {event?.title || "Event Records"}
+            </p>
+            <h1 className="text-4xl font-heading font-bold text-white mb-1">
+              Attendee List
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Manage specific entry permits and track registration lifecycle.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3 pt-4">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-lime transition-colors" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search guests..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-lime/50 focus:border-lime/50 transition-all w-64"
             />
           </div>
-          <button 
+          <button
             onClick={loadData}
             className="p-2.5 rounded-xl glass-panel text-muted-foreground hover:text-white transition-colors"
           >
@@ -207,11 +207,10 @@ export default function EventAttendeesPage() {
           <button
             key={f.id}
             onClick={() => setFilterStatus(f.id as any)}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
-              filterStatus === f.id 
-              ? "bg-lime text-[#1a1e0a]" 
-              : "text-muted-foreground hover:text-white hover:bg-white/5"
-            }`}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${filterStatus === f.id
+                ? "bg-lime text-[#1a1e0a]"
+                : "text-muted-foreground hover:text-white hover:bg-white/5"
+              }`}
           >
             {f.label}
           </button>
@@ -283,14 +282,14 @@ export default function EventAttendeesPage() {
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex flex-col gap-1 font-mono text-[10px] uppercase tracking-wider">
-                       <div className="flex items-center gap-2 text-white/60">
-                         <Mail className="w-3 h-3 text-lime/40" /> {attendee.attendee_email}
-                       </div>
-                       {attendee.attendee_phone && (
-                         <div className="flex items-center gap-2 text-white/40">
-                           <Users className="w-3 h-3 text-lime/20" /> {attendee.attendee_phone}
-                         </div>
-                       )}
+                      <div className="flex items-center gap-2 text-white/60">
+                        <Mail className="w-3 h-3 text-lime/40" /> {attendee.attendee_email}
+                      </div>
+                      {attendee.attendee_phone && (
+                        <div className="flex items-center gap-2 text-white/40">
+                          <Users className="w-3 h-3 text-lime/20" /> {attendee.attendee_phone}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -300,14 +299,12 @@ export default function EventAttendeesPage() {
                   </td>
                   {hasHubspot && (
                     <td className="px-8 py-6">
-                      <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
-                        attendee.sync_status === 'synced' ? 'text-emerald-400' : 
-                        attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
-                      }`} title={attendee.sync_status === 'failed' ? attendee.sync_error_message || 'Sync failed' : undefined}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' : 
-                          attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
-                        }`} />
+                      <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${attendee.sync_status === 'synced' ? 'text-emerald-400' :
+                          attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
+                        }`} title={attendee.sync_status === 'failed' ? attendee.sync_error_message || 'Sync failed' : undefined}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' :
+                            attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
+                          }`} />
                         <span>{attendee.sync_status}</span>
                         {attendee.hubspot_last_synced_at && (
                           <span className="text-[9px] text-white/40 normal-case tracking-normal">
@@ -322,17 +319,17 @@ export default function EventAttendeesPage() {
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                      <button 
+                      <button
                         onClick={() => { setSelectedAttendee(attendee); setShowHistory(true); }}
                         className="p-2.5 hover:bg-white/5 rounded-xl text-muted-foreground hover:text-white transition-all"
                         title="Audit Log"
                       >
                         <History className="w-4 h-4" />
                       </button>
-                      
+
                       {attendee.status === "pending" && (
                         <>
-                          <button 
+                          <button
                             onClick={() => handleStatusUpdate(attendee.id, 'approve')}
                             disabled={actionLoading === attendee.id}
                             className="p-2.5 hover:bg-emerald-500/10 rounded-xl text-emerald-500/60 hover:text-emerald-500 transition-all"
@@ -340,7 +337,7 @@ export default function EventAttendeesPage() {
                           >
                             {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleStatusUpdate(attendee.id, 'reject')}
                             disabled={actionLoading === attendee.id}
                             className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
@@ -350,10 +347,10 @@ export default function EventAttendeesPage() {
                           </button>
                         </>
                       )}
-                      
+
                       {(attendee.status === "approved" || attendee.status === "registered") && (
                         <div className="flex items-center gap-2">
-                          <button 
+                          <button
                             onClick={() => handleStatusUpdate(attendee.id, 'check-in')}
                             disabled={actionLoading === attendee.id}
                             className="p-2.5 hover:bg-lime/10 rounded-xl text-lime/60 hover:text-lime transition-all border border-transparent hover:border-lime/20"
@@ -361,7 +358,7 @@ export default function EventAttendeesPage() {
                           >
                             {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleStatusUpdate(attendee.id, 'revoke')}
                             disabled={actionLoading === attendee.id}
                             className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
@@ -384,14 +381,14 @@ export default function EventAttendeesPage() {
       <AnimatePresence>
         {showHistory && selectedAttendee && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowHistory(false)}
               className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]"
             />
-            <motion.div 
+            <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -403,7 +400,7 @@ export default function EventAttendeesPage() {
                   <History className="w-6 h-6 text-lime" />
                   Audit Trail
                 </h2>
-                <button 
+                <button
                   onClick={() => setShowHistory(false)}
                   className="p-3 hover:bg-white/5 rounded-xl text-muted-foreground hover:text-white transition-all"
                 >
@@ -413,13 +410,13 @@ export default function EventAttendeesPage() {
 
               <div className="mb-10 p-6 glass-panel rounded-2xl border-lime/10">
                 <div className="flex items-center gap-4 mb-4">
-                   <div className="w-14 h-14 rounded-2xl bg-lime flex items-center justify-center text-xl font-black text-olive-dark">
-                     {selectedAttendee.attendee_name.charAt(0).toUpperCase()}
-                   </div>
-                   <div>
-                     <div className="text-xl font-bold text-white">{selectedAttendee.attendee_name}</div>
-                     <div className="text-xs text-muted-foreground font-mono">{selectedAttendee.attendee_email}</div>
-                   </div>
+                  <div className="w-14 h-14 rounded-2xl bg-lime flex items-center justify-center text-xl font-black text-olive-dark">
+                    {selectedAttendee.attendee_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-white">{selectedAttendee.attendee_name}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{selectedAttendee.attendee_email}</div>
+                  </div>
                 </div>
               </div>
 
@@ -436,11 +433,10 @@ export default function EventAttendeesPage() {
               <div className="relative pl-8 space-y-10 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[1px] before:bg-white/10">
                 {selectedAttendee.status_history?.map((entry, idx) => (
                   <div key={idx} className="relative">
-                    <div className={`absolute -left-[41px] top-1.5 w-[14px] h-[14px] rounded-full ring-8 ring-[#0f1108] border-2 ${
-                      idx === selectedAttendee.status_history.length - 1 
-                      ? "bg-lime border-lime shadow-[0_0_15px_rgba(193,217,73,0.5)]" 
-                      : "bg-white/5 border-white/10"
-                    }`} />
+                    <div className={`absolute -left-[41px] top-1.5 w-[14px] h-[14px] rounded-full ring-8 ring-[#0f1108] border-2 ${idx === selectedAttendee.status_history.length - 1
+                        ? "bg-lime border-lime shadow-[0_0_15px_rgba(193,217,73,0.5)]"
+                        : "bg-white/5 border-white/10"
+                      }`} />
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         {entry.from_status && (
@@ -459,8 +455,8 @@ export default function EventAttendeesPage() {
                           {format(new Date(entry.changed_at), "dd MMM, HH:mm:ss")}
                         </div>
                         <div className="flex items-center gap-1.5 text-lime/40">
-                           <Users className="w-3 h-3" />
-                           By: {entry.changed_by === 'attendee' ? 'System (Auto)' : 'Organizer'}
+                          <Users className="w-3 h-3" />
+                          By: {entry.changed_by === 'attendee' ? 'System (Auto)' : 'Organizer'}
                         </div>
                       </div>
                     </div>

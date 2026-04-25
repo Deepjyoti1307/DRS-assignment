@@ -26,7 +26,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState<Partial<Event>>({});
-  
+
   // Status states
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -44,7 +44,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
         const token = await getToken();
         if (!token) return;
         const data = await fetchEvent(token, params.id);
-        
+
         // Format date for the datetime-local input (YYYY-MM-DDThh:mm)
         if (data.date_time) {
           const d = new Date(data.date_time);
@@ -68,7 +68,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
   useEffect(() => {
     const saveDraft = async () => {
       if (!isDirty.current) return;
-      
+
       try {
         setIsSaving(true);
         const token = await getToken();
@@ -89,7 +89,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
         delete payloadToSave.slug;
 
         await updateEvent(token, params.id, payloadToSave);
-        
+
         setLastSaved(new Date());
         isDirty.current = false;
       } catch (err) {
@@ -106,7 +106,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'number' ? Number(value) : value
@@ -119,7 +119,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
       setIsPublishing(true);
       const token = await getToken();
       if (!token) throw new Error("No token");
-      
+
       // Force a final save before publish
       const payloadToSave = { ...formData };
       if (payloadToSave.date_time) {
@@ -134,7 +134,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
 
       await updateEvent(token, params.id, payloadToSave);
       await publishEvent(token, params.id);
-      
+
       router.push("/dashboard");
     } catch (error) {
       console.error("Publish failed:", error);
@@ -176,7 +176,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
 
   return (
     <div className="max-w-6xl mx-auto pb-20">
-      
+
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
@@ -213,7 +213,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={handleDelete}
@@ -235,10 +235,10 @@ export default function EventEditor({ params }: { params: { id: string } }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* ── Main Form Column ── */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Basic Info */}
           <div className="glass-panel rounded-2xl p-6 md:p-8 space-y-6">
             <div>
@@ -275,7 +275,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
 
           {/* Media */}
           <div className="glass-panel rounded-2xl p-6 md:p-8 space-y-6">
-             <div>
+            <div>
               <h2 className="text-xl font-heading font-bold text-white mb-1">Cover Image</h2>
               <p className="text-sm text-muted-foreground mb-6">Provide a URL for the event cover image.</p>
             </div>
@@ -363,7 +363,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
                   />
                 ) : (
                   <div className="space-y-4">
-                    <AddressAutocomplete 
+                    <AddressAutocomplete
                       value={formData.venue || ""}
                       onChange={(addr, lat, lng) => {
                         setFormData(prev => ({
@@ -376,18 +376,18 @@ export default function EventEditor({ params }: { params: { id: string } }) {
                       }}
                       placeholder="Physical Address (e.g. RCCIIT, Kolkata)"
                     />
-                    
+
                     {formData.location_lat && formData.location_lng && (
                       <div className="h-48 rounded-xl overflow-hidden border border-white/10 group relative">
                         <div className="absolute top-3 right-3 z-10">
-                           <div className="px-2 py-1 bg-lime text-[#1a1e0a] text-[10px] font-bold rounded-md shadow-lg flex items-center gap-1.5">
-                              <MapPin className="w-3 h-3" /> Exact Coordinates Locked
-                           </div>
+                          <div className="px-2 py-1 bg-lime text-[#1a1e0a] text-[10px] font-bold rounded-md shadow-lg flex items-center gap-1.5">
+                            <MapPin className="w-3 h-3" /> Exact Coordinates Locked
+                          </div>
                         </div>
-                        <MapDisplay 
-                          lat={formData.location_lat} 
-                          lng={formData.location_lng} 
-                          venueName={formData.venue} 
+                        <MapDisplay
+                          lat={formData.location_lat}
+                          lng={formData.location_lng}
+                          venueName={formData.venue}
                           onLocationSelect={(lat, lng) => {
                             setFormData(prev => ({
                               ...prev,

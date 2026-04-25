@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { 
-  Users, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
+import {
+  Users,
+  CheckCircle2,
+  XCircle,
+  Clock,
   ArrowLeft,
   Mail,
   Search,
@@ -19,10 +19,10 @@ import {
   Calendar
 } from "lucide-react";
 import { format } from "date-fns";
-import { 
-  fetchAllRegistrations, 
-  approveRegistration, 
-  rejectRegistration, 
+import {
+  fetchAllRegistrations,
+  approveRegistration,
+  rejectRegistration,
   revokeRegistration,
   fetchSettings
 } from "@/lib/api";
@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function GlobalAttendeesPage() {
   const router = useRouter();
   const { getToken } = useAuth();
-  
+
   const [attendees, setAttendees] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +98,7 @@ export default function GlobalAttendeesPage() {
     }
   };
 
-  const filteredAttendees = attendees.filter(a => 
+  const filteredAttendees = attendees.filter(a =>
     a.attendee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.attendee_email.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -136,15 +136,15 @@ export default function GlobalAttendeesPage() {
         <div className="flex items-center gap-3">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-lime transition-colors" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-lime/50 focus:border-lime/50 transition-all w-72"
             />
           </div>
-          <button 
+          <button
             onClick={loadData}
             className="p-2.5 rounded-xl glass-panel text-muted-foreground hover:text-white transition-colors"
             title="Refresh"
@@ -186,11 +186,10 @@ export default function GlobalAttendeesPage() {
           <button
             key={f.id}
             onClick={() => setFilterStatus(f.id as any)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              filterStatus === f.id 
-              ? "bg-lime text-[#1a1e0a]" 
-              : "text-muted-foreground hover:text-white hover:bg-white/5"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${filterStatus === f.id
+                ? "bg-lime text-[#1a1e0a]"
+                : "text-muted-foreground hover:text-white hover:bg-white/5"
+              }`}
           >
             {f.label}
           </button>
@@ -272,14 +271,12 @@ export default function GlobalAttendeesPage() {
                   </td>
                   {hasHubspot && (
                     <td className="px-8 py-6">
-                      <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
-                        attendee.sync_status === 'synced' ? 'text-emerald-400' : 
-                        attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
-                      }`} title={attendee.sync_status === 'failed' ? attendee.sync_error_message || 'Sync failed' : undefined}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 
-                          attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
-                        }`} />
+                      <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${attendee.sync_status === 'synced' ? 'text-emerald-400' :
+                          attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
+                        }`} title={attendee.sync_status === 'failed' ? attendee.sync_error_message || 'Sync failed' : undefined}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' :
+                            attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
+                          }`} />
                         <span>{attendee.sync_status}</span>
                         {attendee.hubspot_last_synced_at && (
                           <span className="text-[9px] text-white/40 normal-case tracking-normal">
@@ -294,17 +291,17 @@ export default function GlobalAttendeesPage() {
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <button 
+                      <button
                         onClick={() => { setSelectedAttendee(attendee); setShowHistory(true); }}
                         className="p-2.5 hover:bg-white/5 rounded-xl text-muted-foreground hover:text-white transition-all"
                         title="View Audit Trail"
                       >
                         <History className="w-4 h-4" />
                       </button>
-                      
+
                       {attendee.status === "pending" && (
                         <>
-                          <button 
+                          <button
                             onClick={() => handleStatusUpdate(attendee.id, 'approve')}
                             disabled={actionLoading === attendee.id}
                             className="p-2.5 hover:bg-emerald-500/10 rounded-xl text-emerald-500/60 hover:text-emerald-500 transition-all"
@@ -312,7 +309,7 @@ export default function GlobalAttendeesPage() {
                           >
                             {actionLoading === attendee.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleStatusUpdate(attendee.id, 'reject')}
                             disabled={actionLoading === attendee.id}
                             className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
@@ -322,9 +319,9 @@ export default function GlobalAttendeesPage() {
                           </button>
                         </>
                       )}
-                      
+
                       {(attendee.status === "approved" || attendee.status === "registered") && (
-                        <button 
+                        <button
                           onClick={() => handleStatusUpdate(attendee.id, 'revoke')}
                           disabled={actionLoading === attendee.id}
                           className="p-2.5 hover:bg-rose-500/10 rounded-xl text-rose-500/60 hover:text-rose-500 transition-all"
@@ -346,14 +343,14 @@ export default function GlobalAttendeesPage() {
       <AnimatePresence>
         {showHistory && selectedAttendee && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowHistory(false)}
               className="fixed inset-0 bg-black/60 backdrop-blur-md z-50"
             />
-            <motion.div 
+            <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -367,7 +364,7 @@ export default function GlobalAttendeesPage() {
                   </div>
                   <h2 className="text-2xl font-heading font-bold text-white tracking-tight">Audit Trail</h2>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowHistory(false)}
                   className="p-3 hover:bg-white/5 rounded-xl text-muted-foreground hover:text-white transition-all"
                 >
@@ -377,13 +374,13 @@ export default function GlobalAttendeesPage() {
 
               <div className="mb-10 p-6 glass-panel rounded-2xl border-lime/10">
                 <div className="flex items-center gap-4 mb-4">
-                   <div className="w-14 h-14 rounded-2xl bg-lime flex items-center justify-center text-xl font-black text-olive-dark">
-                     {selectedAttendee.attendee_name.charAt(0).toUpperCase()}
-                   </div>
-                   <div>
-                     <div className="text-xl font-bold text-white">{selectedAttendee.attendee_name}</div>
-                     <div className="text-sm text-muted-foreground font-mono">{selectedAttendee.attendee_email}</div>
-                   </div>
+                  <div className="w-14 h-14 rounded-2xl bg-lime flex items-center justify-center text-xl font-black text-olive-dark">
+                    {selectedAttendee.attendee_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-white">{selectedAttendee.attendee_name}</div>
+                    <div className="text-sm text-muted-foreground font-mono">{selectedAttendee.attendee_email}</div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                   <div>
@@ -404,11 +401,10 @@ export default function GlobalAttendeesPage() {
               <div className="relative pl-8 space-y-10 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[1px] before:bg-white/10">
                 {selectedAttendee.status_history?.map((entry, idx) => (
                   <div key={idx} className="relative">
-                    <div className={`absolute -left-[41px] top-1.5 w-[14px] h-[14px] rounded-full ring-8 ring-[#0f1108] border-2 ${
-                      idx === selectedAttendee.status_history.length - 1 
-                      ? "bg-lime border-lime shadow-[0_0_15px_rgba(193,217,73,0.5)]" 
-                      : "bg-white/5 border-white/10"
-                    }`} />
+                    <div className={`absolute -left-[41px] top-1.5 w-[14px] h-[14px] rounded-full ring-8 ring-[#0f1108] border-2 ${idx === selectedAttendee.status_history.length - 1
+                        ? "bg-lime border-lime shadow-[0_0_15px_rgba(193,217,73,0.5)]"
+                        : "bg-white/5 border-white/10"
+                      }`} />
                     <div className="space-y-2">
                       <p className="text-sm font-bold text-white">
                         Status updated to <span className="text-lime uppercase tracking-wider">{entry.status}</span>
