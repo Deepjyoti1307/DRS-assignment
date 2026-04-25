@@ -21,7 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "Eventic — Go from Idea to Live Event in Minutes",
   description:
-    "The AI-powered event management ecosystem for visionaries. Orchestrate seamless digital and physical experiences with tranquil precision.",
+    "The high-performance event management ecosystem for visionaries. Orchestrate seamless digital and physical experiences with robust registration logic and tranquil precision.",
   openGraph: {
     title: "Eventic",
     description: "Go from Idea to Live Event in Minutes",

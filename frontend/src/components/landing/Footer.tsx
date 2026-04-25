@@ -3,7 +3,7 @@
 /* ── Swap footer content here ── */
 const BRAND_NAME = "Eventic";
 const BRAND_TAGLINE =
-  "Building the future of event orchestration through intuitive AI design and digital tranquility.";
+  "Building the future of event orchestration through robust engineering and digital tranquility.";
 const YEAR = new Date().getFullYear();
 
 const FOOTER_LINKS = {

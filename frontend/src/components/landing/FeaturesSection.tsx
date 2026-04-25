@@ -1,13 +1,13 @@
 import { Zap, BarChart3, Link2, ShieldCheck, Cpu, Layout, Users2, Sparkles } from "lucide-react";
 
-const SECTION_TITLE = "Future of Events";
-const SECTION_SUBTITLE = "The AI-powered orchestration engine for world-class organizers.";
+const SECTION_TITLE = "Core Engine Capabilities";
+const SECTION_SUBTITLE = "The high-performance orchestration engine for world-class organizers.";
 
 const FEATURES = [
   {
-    icon: <Sparkles className="w-6 h-6 text-lime" />,
-    title: "AI Event Orchestration",
-    description: "Generate full-scale event ecosystems from a simple text prompt. Our AI builds landing pages, registration flows, and marketing schedules instantly.",
+    icon: <Cpu className="w-6 h-6 text-lime" />,
+    title: "Dynamic RSVP Logic",
+    description: "Configurable registration workflows. Switch between instant Open registration or curated Shortlisted modes with ease.",
     size: "large",
   },
   {
@@ -18,20 +18,20 @@ const FEATURES = [
   },
   {
     icon: <Users2 className="w-6 h-6 text-lime" />,
-    title: "Attendee Experience",
-    description: "Personalized portals for guests with real-time updates and seamless check-ins.",
+    title: "Atomic Capacity Control",
+    description: "High-concurrency registration safety. Our engine ensures you never exceed event capacity, even under heavy load.",
     size: "small",
   },
   {
     icon: <ShieldCheck className="w-6 h-6 text-lime" />,
     title: "Enterprise Audit Trail",
-    description: "Military-grade transparency. Every interaction is logged and encrypted for your peace of mind.",
+    description: "Complete transparency. Every status transition and email interaction is logged for full accountability.",
     size: "medium",
   },
   {
-    icon: <BarChart3 className="w-6 h-6 text-lime" />,
-    title: "Deep Analytics",
-    description: "Predictive insights on attendee behavior and event performance.",
+    icon: <Zap className="w-6 h-6 text-lime" />,
+    title: "Automated Workflows",
+    description: "Trigger-based responsive email flows that keep attendees engaged from registration to check-in.",
     size: "medium",
   }
 ];
@@ -52,7 +52,7 @@ export default function FeaturesSection() {
 
         {/* ── Bento Grid ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:auto-rows-[300px]">
-          {/* Card 1: AI (Large) */}
+          {/* Card 1: Logic (Large) */}
           <div className="md:col-span-2 md:row-span-2 glass-card-premium rounded-[2.5rem] p-10 flex flex-col justify-between group overflow-hidden relative">
             <div className="absolute top-0 right-0 w-64 h-64 bg-lime/10 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 group-hover:bg-lime/20 transition-all duration-700" />
             <div className="relative">
@@ -67,8 +67,8 @@ export default function FeaturesSection() {
               </p>
             </div>
             <div className="flex gap-4 mt-8">
-              <div className="px-5 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60">Autonomous Design</div>
-              <div className="px-5 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60">GPT-4 Integration</div>
+              <div className="px-5 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60">Open Mode</div>
+              <div className="px-5 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60">Shortlisted Mode</div>
             </div>
           </div>
 

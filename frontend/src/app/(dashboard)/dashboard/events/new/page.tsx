@@ -203,7 +203,7 @@ export default function NewEventTemplateSelection() {
               <Sparkles className="w-4 h-4 text-white/60" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">AI Summit 2024</h4>
+              <h4 className="text-sm font-bold text-white">Tech Conference 2024</h4>
               <p className="text-xs text-muted-foreground mt-0.5">Modified 2 days ago</p>
             </div>
           </div>
