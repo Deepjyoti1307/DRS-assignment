@@ -97,16 +97,20 @@ function DonutLabel({ cx, cy, total }: { cx: number; cy: number; total: number }
 
 function CapacityBar({ registered, capacity }: { registered: number; capacity: number }) {
   const pct = Math.min((registered / capacity) * 100, 100);
-  const color = pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-lime";
+  const color = pct >= 100 ? "bg-rose-500" : pct >= 80 ? "bg-amber-400" : "bg-lime";
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{registered} registered</span>
-        <span>{capacity} capacity</span>
+    <div className="space-y-2">
+      <div className="flex justify-between items-end">
+        <span className="text-[10px] font-black uppercase tracking-widest text-white/30">
+          Capacity
+        </span>
+        <span className="text-xs font-bold text-white">
+          {registered} <span className="text-white/30">/</span> {capacity}
+        </span>
       </div>
-      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all duration-700", color)}
+          className={cn("h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(193,217,73,0.3)]", color)}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -121,70 +125,101 @@ function EventCard({ event, onDuplicate }: { event: Event; onDuplicate: (id: str
   const isPast = date < new Date();
 
   return (
-    <div className="glass-panel rounded-2xl p-6 hover:border-white/15 transition-all duration-300 space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground font-medium uppercase tracking-wider">
-            <span>{event.mode === "online" ? "🌐 Online" : "📍 In-Person"}</span>
-            {isPast && <span className="text-amber-400/70">· Past</span>}
+    <div className="group relative glass-panel rounded-[2rem] p-7 hover:border-lime/30 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+      {/* Subtle background glow on hover */}
+      <div className="absolute -inset-1 bg-gradient-to-br from-lime/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl -z-10" />
+      
+      <div className="space-y-6">
+        {/* Header: Mode & Status */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border",
+              event.mode === "online" 
+                ? "bg-sky-500/10 text-sky-400 border-sky-500/20" 
+                : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+            )}>
+              {event.mode === "online" ? "Online" : "In-Person"}
+            </div>
+            {isPast && (
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.15em] bg-white/5 text-white/40 border border-white/10">
+                Past
+              </span>
+            )}
           </div>
-          <h3 className="font-heading font-bold text-white text-lg leading-tight truncate">
+          <StatusBadge status={event.status} />
+        </div>
+
+        {/* Title */}
+        <div className="min-h-[3.5rem]">
+          <h3 className="text-xl font-heading font-bold text-white leading-[1.2] group-hover:text-lime transition-colors duration-300">
             {event.title}
           </h3>
         </div>
-        <StatusBadge status={event.status} />
-      </div>
 
-      <div className="space-y-1.5 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-lime/60 shrink-0" />
-          <span>
-            {date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
-            {" · "}
-            {date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-lime/60 shrink-0" />
-          <span className="truncate">{event.venue}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-lime/60 shrink-0" />
-          <span>{event.registration_mode === "open" ? "Open" : "Shortlisted"} · {event.capacity} seats</span>
-        </div>
-      </div>
+        {/* Metadata Feed */}
+        <div className="space-y-3.5">
+          <div className="flex items-center gap-3 text-white/60">
+            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-lime/10 transition-colors">
+              <Calendar className="w-4 h-4 text-lime" />
+            </div>
+            <div className="text-xs font-medium">
+              <span className="text-white block">
+                {date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-white/30">
+                {date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          </div>
 
-      <CapacityBar registered={event.registrations_count || 0} capacity={event.capacity} />
+          <div className="flex items-center gap-3 text-white/60">
+            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-lime/10 transition-colors">
+              <MapPin className="w-4 h-4 text-lime" />
+            </div>
+            <div className="text-xs font-medium truncate">
+              <span className="text-white block truncate">{event.venue}</span>
+              <span className="text-[10px] uppercase tracking-wider text-white/30">Location</span>
+            </div>
+          </div>
+        </div>
 
-      <div className="flex items-center gap-2 pt-1">
-        <Link
-          href={`/dashboard/events/${event._id || event.id}/edit`}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors"
-        >
-          <Pencil className="w-3.5 h-3.5" /> Edit
-        </Link>
-        {event.status === "published" && event.slug && (
+        {/* Capacity Visualization */}
+        <div className="pt-2">
+          <CapacityBar registered={event.registrations_count || 0} capacity={event.capacity} />
+        </div>
+
+        {/* Action Grid */}
+        <div className="grid grid-cols-2 gap-2 pt-2">
           <Link
-            href={`/e/${event.slug}`}
-            target="_blank"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-lime/10 hover:bg-lime/20 text-lime transition-colors"
+            href={`/dashboard/events/${event._id || event.id}/edit`}
+            className="flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-white/5 hover:bg-white/10 text-white transition-all border border-white/5"
           >
-            <ExternalLink className="w-3.5 h-3.5" /> Public Page
+            <Pencil className="w-3.5 h-3.5" /> Edit
           </Link>
-        )}
-        <Link
-          href={`/dashboard/events/${event._id || event.id}/attendees`}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-lime/10 text-lime hover:bg-lime/20 transition-colors ml-auto"
-        >
-          <Users className="w-3.5 h-3.5" /> Attendees
-        </Link>
-        <button
-          onClick={() => onDuplicate(event._id || event.id || "")}
-          className="ml-auto p-2 text-xs rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
-          title="Duplicate event"
-        >
-          <Copy className="w-3.5 h-3.5" />
-        </button>
+          <Link
+            href={`/dashboard/events/${event._id || event.id}/attendees`}
+            className="flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-lime/10 hover:bg-lime/20 text-lime transition-all border border-lime/20"
+          >
+            <Users className="w-3.5 h-3.5" /> Guests
+          </Link>
+          {event.status === "published" && event.slug ? (
+            <Link
+              href={`/e/${event.slug}`}
+              target="_blank"
+              className="col-span-2 flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-lime text-olive-dark hover:scale-[1.02] active:scale-[0.98] transition-all border-glow"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> View Public Page
+            </Link>
+          ) : (
+            <button
+              onClick={() => onDuplicate(event._id || event.id || "")}
+              className="col-span-2 flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-dashed border-white/10"
+            >
+              <Copy className="w-3.5 h-3.5" /> Duplicate Draft
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -278,14 +313,14 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={loadEvents}
-            className="p-2.5 rounded-xl glass-panel text-muted-foreground hover:text-white transition-colors"
+            className="p-3.5 rounded-2xl glass-panel text-white/40 hover:text-white hover:border-white/20 transition-all active:scale-95"
             title="Refresh"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
           <Link
             href="/dashboard/events/new"
-            className="flex items-center gap-2 px-5 py-3 bg-lime text-[#1a1e0a] font-bold rounded-xl hover:bg-lime/90 transition-all border-glow text-sm"
+            className="flex items-center gap-2 px-6 py-3.5 bg-lime text-olive-dark font-black uppercase tracking-[0.1em] rounded-2xl hover:bg-white hover:text-olive-dark transition-all border-glow text-[11px] shadow-[0_10px_30px_rgba(193,217,73,0.3)]"
           >
             <PlusCircle className="w-4 h-4" />
             Create Event
@@ -298,17 +333,20 @@ export default function DashboardPage() {
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : [
-              { label: "Total Events", value: totalEvents, icon: "📅", color: "text-white" },
-              { label: "Published", value: published, icon: "🟢", color: "text-lime" },
-              { label: "Drafts", value: drafts, icon: "✏️", color: "text-gray-400" },
-              { label: "Cancelled", value: cancelled, icon: "⛔", color: "text-red-400" },
+              { label: "Total Events", value: totalEvents, icon: <Calendar className="w-4 h-4 text-white" />, color: "from-white/10 to-transparent", textColor: "text-white" },
+              { label: "Published", value: published, icon: <div className="w-2 h-2 rounded-full bg-lime animate-pulse" />, color: "from-lime/10 to-transparent", textColor: "text-lime" },
+              { label: "Drafts", value: drafts, icon: <Pencil className="w-4 h-4 text-white/40" />, color: "from-white/5 to-transparent", textColor: "text-white/40" },
+              { label: "Cancelled", value: cancelled, icon: <div className="w-2 h-2 rounded-full bg-rose-500" />, color: "from-rose-500/10 to-transparent", textColor: "text-rose-400" },
             ].map((s, i) => (
-              <div key={i} className="glass-panel rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground font-medium">{s.label}</span>
-                  <span className="text-lg">{s.icon}</span>
+              <div key={i} className="group relative glass-panel rounded-3xl p-6 overflow-hidden">
+                <div className={cn("absolute inset-0 bg-gradient-to-br opacity-50 -z-10", s.color)} />
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</span>
+                  <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-sm">
+                    {s.icon}
+                  </div>
                 </div>
-                <p className={cn("text-4xl font-heading font-bold mb-0.5", s.color)}>{s.value}</p>
+                <p className={cn("text-4xl font-heading font-black tracking-tight", s.textColor)}>{s.value}</p>
               </div>
             ))}
       </div>
@@ -436,17 +474,16 @@ export default function DashboardPage() {
       )}
 
       {/* ── Filter tabs ── */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground mr-2 font-medium">Filter:</span>
+      <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl w-fit border border-white/5">
         {FILTERS.map((f) => (
           <button
             key={f.value}
             onClick={() => setActiveFilter(f.value)}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+              "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
               activeFilter === f.value
-                ? "bg-lime text-[#1a1e0a]"
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
+                ? "bg-lime text-olive-dark shadow-[0_0_15px_rgba(193,217,73,0.3)]"
+                : "text-white/40 hover:text-white hover:bg-white/5"
             )}
           >
             {f.label}

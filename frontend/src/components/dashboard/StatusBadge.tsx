@@ -29,11 +29,15 @@ export function StatusBadge({ status }: { status: EventStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
+        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.1em]",
         cfg.classes
       )}
     >
-      <span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />
+      <span className={cn(
+        "w-1.5 h-1.5 rounded-full", 
+        cfg.dot,
+        status === "published" && "animate-pulse"
+      )} />
       {cfg.label}
     </span>
   );
