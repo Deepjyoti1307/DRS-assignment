@@ -65,8 +65,6 @@ export default function EventAttendeesPage() {
   async function loadData() {
     try {
       setLoading(true);
-      const api = await import("../../../../lib/api");
-      console.log("Fetching from:", api.API_BASE_URL);
       const token = await getToken();
       if (!token) return;
 
@@ -216,8 +214,8 @@ export default function EventAttendeesPage() {
             key={f.id}
             onClick={() => setFilterStatus(f.id as any)}
             className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${filterStatus === f.id
-                ? "bg-lime text-[#1a1e0a]"
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
+              ? "bg-lime text-[#1a1e0a]"
+              : "text-muted-foreground hover:text-white hover:bg-white/5"
               }`}
           >
             {f.label}
@@ -308,10 +306,10 @@ export default function EventAttendeesPage() {
                   {hasHubspot && (
                     <td className="px-8 py-6">
                       <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${attendee.sync_status === 'synced' ? 'text-emerald-400' :
-                          attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
+                        attendee.sync_status === 'failed' ? 'text-rose-400' : 'text-amber-400'
                         }`} title={attendee.sync_status === 'failed' ? attendee.sync_error_message || 'Sync failed' : undefined}>
                         <div className={`w-1.5 h-1.5 rounded-full ${attendee.sync_status === 'synced' ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' :
-                            attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
+                          attendee.sync_status === 'failed' ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
                           }`} />
                         <span>{attendee.sync_status}</span>
                         {attendee.hubspot_last_synced_at && (
@@ -465,8 +463,8 @@ export default function EventAttendeesPage() {
                 {selectedAttendee.status_history?.map((entry, idx) => (
                   <div key={idx} className="relative">
                     <div className={`absolute -left-[41px] top-1.5 w-[14px] h-[14px] rounded-full ring-8 ring-[#0f1108] border-2 ${idx === selectedAttendee.status_history.length - 1
-                        ? "bg-lime border-lime shadow-[0_0_15px_rgba(193,217,73,0.5)]"
-                        : "bg-white/5 border-white/10"
+                      ? "bg-lime border-lime shadow-[0_0_15px_rgba(193,217,73,0.5)]"
+                      : "bg-white/5 border-white/10"
                       }`} />
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
