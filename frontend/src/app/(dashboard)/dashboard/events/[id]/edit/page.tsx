@@ -318,7 +318,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
             </div>
 
             <div className="space-y-4">
-              <div 
+              <div
                 className={cn(
                   "relative group cursor-pointer border-2 border-dashed rounded-2xl transition-all duration-300 min-h-[200px] flex flex-col items-center justify-center p-8",
                   isUploading ? "border-lime/50 bg-lime/5" : "border-white/10 hover:border-lime/30 hover:bg-white/[0.02]"
@@ -332,7 +332,7 @@ export default function EventEditor({ params }: { params: { id: string } }) {
                   className="hidden"
                   onChange={handleFileChange}
                 />
-                
+
                 {isUploading ? (
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-8 h-8 text-lime animate-spin" />
@@ -340,10 +340,10 @@ export default function EventEditor({ params }: { params: { id: string } }) {
                   </div>
                 ) : formData.image_url ? (
                   <div className="absolute inset-0 rounded-2xl overflow-hidden group">
-                    <img 
-                      src={formData.image_url.startsWith('http') ? formData.image_url : `${API_BASE_URL}${formData.image_url}`} 
-                      alt="Cover Preview" 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={formData.image_url.startsWith('http') ? formData.image_url : `${API_BASE_URL}${formData.image_url}`}
+                      alt="Cover Preview"
+                      className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
                       <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">

@@ -106,12 +106,12 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
   const scheduleItems: Array<{ time?: string; title: string; description?: string }> = normalizedSchedule.length > 0
     ? normalizedSchedule
     : [
-        {
-          time: eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-          title: "Event begins",
-          description: "Full agenda will be shared closer to the event date.",
-        },
-      ];
+      {
+        time: eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+        title: "Event begins",
+        description: "Full agenda will be shared closer to the event date.",
+      },
+    ];
 
   return (
     <div className="min-h-screen bg-[#0f1105] text-white selection:bg-lime selection:text-[#0f1105] relative overflow-hidden">
