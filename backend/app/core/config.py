@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     clerk_jwks_url: str = ""
     clerk_audience: str = ""
     clerk_authorized_party: str = ""
+    clerk_touch_sessions: bool = False
     encryption_key: str = ""
     
     # SMTP Settings

@@ -83,6 +83,7 @@ async def create_event(payload, user: dict) -> Event:
         capacity=payload.capacity,
         registration_mode=payload.registration_mode,
         template_used=payload.template_used,
+        custom_fields=getattr(payload, "custom_fields", None),
         slug=await _generate_safe_slug(payload.title),
     )
     await event.insert()
@@ -211,6 +212,7 @@ async def duplicate_event(event_id: str, user: dict) -> Event:
         image_url=source_event.image_url,
         location_lat=source_event.location_lat,
         location_lng=source_event.location_lng,
+        custom_fields=source_event.custom_fields,
         status=EventStatus.draft,
         slug=await _generate_safe_slug(source_event.title),
         registrations_count=0

@@ -14,7 +14,7 @@ security = HTTPBearer()
 
 def _touch_clerk_session_worker(session_id: str) -> None:
     settings = get_settings()
-    if not settings.clerk_secret_key or not session_id:
+    if not settings.clerk_touch_sessions or not settings.clerk_secret_key or not session_id:
         return
 
     try:

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -32,6 +32,7 @@ class EventCreate(BaseModel):
     image_url: Optional[str] = None
     location_lat: Optional[float] = None
     location_lng: Optional[float] = None
+    custom_fields: Optional[Dict[str, Any]] = None
 
 
 class EventUpdate(BaseModel):
@@ -46,6 +47,7 @@ class EventUpdate(BaseModel):
     image_url: Optional[str] = None
     location_lat: Optional[float] = None
     location_lng: Optional[float] = None
+    custom_fields: Optional[Dict[str, Any]] = None
 
 
 @router.get("")

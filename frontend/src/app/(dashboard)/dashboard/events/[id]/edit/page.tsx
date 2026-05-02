@@ -135,6 +135,22 @@ export default function EventEditor({ params }: { params: { id: string } }) {
     isDirty.current = true;
   };
 
+  const getScheduleItems = () => {
+    const raw = (formData as any).custom_fields?.schedule;
+    return Array.isArray(raw) ? raw : [];
+  };
+
+  const setScheduleItems = (items: Array<{ time?: string; title?: string; description?: string }>) => {
+    setFormData(prev => ({
+      ...prev,
+      custom_fields: {
+        ...(prev as any).custom_fields,
+        schedule: items,
+      },
+    }));
+    isDirty.current = true;
+  };
+
   const handlePublish = async () => {
     try {
       setIsPublishing(true);
@@ -354,6 +370,92 @@ export default function EventEditor({ params }: { params: { id: string } }) {
                   <ImageIcon className="w-3 h-3" />
                   <span className="truncate max-w-md">Asset Location: {formData.image_url}</span>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div className="glass-panel rounded-2xl p-6 md:p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-heading font-bold text-white mb-1">Event Timeline</h2>
+                <p className="text-sm text-muted-foreground">Add agenda moments shown on the public event page.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setScheduleItems([...getScheduleItems(), { time: "", title: "", description: "" }])}
+                className="px-4 py-2 bg-white/10 border border-white/10 text-white text-xs font-bold rounded-lg hover:bg-white/15 transition-colors"
+              >
+                Add Item
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {getScheduleItems().length === 0 ? (
+                <div className="text-sm text-white/40 border border-dashed border-white/10 rounded-xl p-4">
+                  No timeline items yet. Add the first moment to make your event agenda stand out.
+                </div>
+              ) : (
+                getScheduleItems().map((item: any, index: number) => (
+                  <div key={`schedule-${index}`} className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/40">Moment {index + 1}</p>
+                      <button
+                        type="button"
+                        onClick={() => setScheduleItems(getScheduleItems().filter((_: any, i: number) => i !== index))}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-widest text-white/50 mb-2">Time</label>
+                        <input
+                          type="text"
+                          value={item.time || ""}
+                          onChange={(e) => {
+                            const next = [...getScheduleItems()];
+                            next[index] = { ...next[index], time: e.target.value };
+                            setScheduleItems(next);
+                          }}
+                          className="w-full bg-[#1a1e0a] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-lime/50 transition-all"
+                          placeholder="09:00 AM"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] font-bold uppercase tracking-widest text-white/50 mb-2">Title</label>
+                        <input
+                          type="text"
+                          value={item.title || ""}
+                          onChange={(e) => {
+                            const next = [...getScheduleItems()];
+                            next[index] = { ...next[index], title: e.target.value };
+                            setScheduleItems(next);
+                          }}
+                          className="w-full bg-[#1a1e0a] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-lime/50 transition-all"
+                          placeholder="Opening Keynote"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-widest text-white/50 mb-2">Description</label>
+                      <textarea
+                        value={item.description || ""}
+                        onChange={(e) => {
+                          const next = [...getScheduleItems()];
+                          next[index] = { ...next[index], description: e.target.value };
+                          setScheduleItems(next);
+                        }}
+                        rows={3}
+                        className="w-full bg-[#1a1e0a] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-lime/50 transition-all resize-y"
+                        placeholder="What will happen during this moment?"
+                      />
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>

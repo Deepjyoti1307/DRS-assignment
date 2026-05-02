@@ -23,6 +23,7 @@ export interface Event {
   image_url: string | null;
   location_lat: number | null;
   location_lng: number | null;
+  custom_fields?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

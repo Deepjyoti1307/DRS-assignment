@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchPublicEvent, PublicEventResponse, registerForEvent, API_BASE_URL } from "@/lib/api";
-import { Calendar, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Footer from "@/components/landing/Footer";
@@ -99,197 +99,138 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
     cancelled: "text-red-400 bg-red-400/10 border-red-400/20",
   };
 
+  const rawSchedule = (event as any).schedule || (event as any).custom_fields?.schedule || [];
+  const normalizedSchedule = Array.isArray(rawSchedule)
+    ? rawSchedule.filter((item) => String(item?.title || "").trim().length > 0)
+    : [];
+  const scheduleItems: Array<{ time?: string; title: string; description?: string }> = normalizedSchedule.length > 0
+    ? normalizedSchedule
+    : [
+        {
+          time: eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+          title: "Event begins",
+          description: "Full agenda will be shared closer to the event date.",
+        },
+      ];
+
   return (
     <div className="min-h-screen bg-[#0f1105] text-white selection:bg-lime selection:text-[#0f1105] relative overflow-hidden">
-      {/* ── Background Image Enhancement ── */}
+      <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-lime/10 blur-[120px]" />
+      <div className="absolute top-40 -left-16 h-72 w-72 rounded-full bg-emerald-400/10 blur-[140px]" />
+      <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-lime/5 blur-[160px]" />
+
       {event.image_url && (
-        <div className="absolute top-0 left-0 w-full h-[800px] pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[700px] pointer-events-none z-0 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img 
-            src={event.image_url.startsWith('http') ? event.image_url : `${API_BASE_URL}${event.image_url}`} 
-            alt="" 
-            className="w-full h-full object-cover opacity-[0.15] blur-[100px] scale-110"
+          <img
+            src={event.image_url.startsWith("http") ? event.image_url : `${API_BASE_URL}${event.image_url}`}
+            alt=""
+            className="w-full h-full object-cover opacity-[0.2] blur-[110px] scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f1105]/80 to-[#0f1105]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f1105]/70 to-[#0f1105]"></div>
         </div>
       )}
 
-      {/* ── Navbar ── */}
       <nav className="border-b border-white/5 relative z-10">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center">
           <Link href="/" className="font-heading font-bold text-xl flex items-center gap-2 text-lime">
             Eventic
           </Link>
-          <div className="flex items-center gap-8 text-sm font-semibold">
-            <Link href="#" className="text-white/70 hover:text-white transition-colors">EVENTS</Link>
-            <Link href="#" className="text-white/70 hover:text-white transition-colors">ABOUT</Link>
-            <div className="w-px h-4 bg-white/10 mx-2"></div>
-            <Link href="/dashboard" className="px-5 py-2 bg-lime text-[#0f1105] rounded-md hover:bg-lime/90 transition-colors">
-              Sign In
-            </Link>
-          </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 md:py-20 relative z-10">
-
-        {/* ── Top Section ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24">
-          <div className="space-y-8">
-            <div className="flex items-center gap-4">
+      <main className="max-w-6xl mx-auto px-6 py-12 md:py-20 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 mb-16">
+          <div className="glass-panel rounded-3xl p-8 md:p-10 border border-white/10 bg-white/[0.04] shadow-2xl">
+            <div className="flex flex-wrap items-center gap-3">
               <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full border ${statusColors[availability.state]}`}>
-                {availability.state === 'open' ? '• REGISTRATION OPEN' : `• ${availability.state.toUpperCase()}`}
+                {availability.state === "open" ? "REGISTRATION OPEN" : availability.state.toUpperCase()}
               </span>
               <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
                 ID: {(event._id || event.id || "").slice(-6)}
               </span>
             </div>
 
-            <div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold leading-tight text-white mb-6">
-                {event.title}
-              </h1>
-              <p className="text-lg text-white/60 leading-relaxed max-w-xl">
-                {event.description}
-              </p>
-            </div>
-          </div>
+            <h1 className="text-4xl md:text-5xl font-heading font-bold leading-tight text-white mt-6">
+              {event.title}
+            </h1>
+            <p className="text-base md:text-lg text-white/60 leading-relaxed max-w-2xl mt-4">
+              {event.description}
+            </p>
 
-          <div className="space-y-4 lg:pl-12">
-            {/* Details Cards */}
-            <div className="glass-panel rounded-2xl p-6 border border-white/5 hover:border-lime/20 transition-colors">
-              <div className="flex gap-4">
-                <Calendar className="w-5 h-5 text-lime shrink-0 mt-1" />
-                <div>
-                  <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Date & Time</h3>
-                  <p className="font-semibold text-white">
-                    {eventDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                  </p>
-                  <p className="text-sm text-white/60 mt-1">
-                    {eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} — {event.mode === 'online' ? 'Online' : 'Local Time'}
-                  </p>
-                  <p className="text-xs text-white/40 mt-1">Timezone offset: {utcOffset}</p>
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:border-lime/30 hover:bg-white/10">
+                <div className="flex items-start gap-4">
+                  <Calendar className="w-6 h-6 text-lime mt-1" />
+                  <div>
+                    <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Date & Time</p>
+                    <p className="font-semibold text-white mt-2">
+                      {eventDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                    <p className="text-sm text-white/60 mt-1">
+                      {eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} — {event.mode === "online" ? "Online" : "Local Time"}
+                    </p>
+                    <p className="text-xs text-white/40 mt-1">Timezone offset: {utcOffset}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="glass-panel rounded-2xl p-6 border border-white/5 hover:border-lime/20 transition-colors">
-              <div className="flex gap-4">
-                <MapPin className="w-5 h-5 text-lime shrink-0 mt-1" />
-                <div>
-                  <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Venue</h3>
-                  <p className="font-semibold text-white">
-                    {event.mode === 'online' ? "Virtual Event" : event.venue.split(',')[0]}
-                  </p>
-                  <p className="text-sm text-white/60 mt-1">
-                    {event.mode === 'online' ? event.venue : event.venue.split(',').slice(1).join(',')}
-                  </p>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:border-lime/30 hover:bg-white/10">
+                <div className="flex items-start gap-4">
+                  <MapPin className="w-6 h-6 text-lime mt-1" />
+                  <div>
+                    <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Venue</p>
+                    <p className="font-semibold text-white mt-2">
+                      {event.mode === "online" ? "Virtual Event" : event.venue.split(",")[0]}
+                    </p>
+                    <p className="text-sm text-white/60 mt-1">
+                      {event.mode === "online" ? event.venue : event.venue.split(",").slice(1).join(",")}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ── Middle Section ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-
-          <div className="lg:col-span-7 space-y-8">
-            {/* Mock Schedule matching the design */}
-            <div className="glass-panel rounded-2xl p-8 border border-white/5">
-              <h2 className="text-sm font-bold text-white mb-8">Event Schedule</h2>
-              <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
-
-                <div className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="hidden md:flex flex-1 justify-end shrink-0 text-right pr-8">
-                    <span className="font-mono text-lime font-bold">09:00</span>
-                  </div>
-                  <div className="flex-1 pl-8 md:pl-0 md:text-left md:ml-8">
-                    <h3 className="font-semibold text-white mb-1">Opening Keynote</h3>
-                    <p className="text-sm text-white/60">Introduction and welcome speech.</p>
-                  </div>
-                </div>
-
-                <div className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="hidden md:flex flex-1 justify-end shrink-0 text-right pr-8">
-                    <span className="font-mono text-lime font-bold">11:30</span>
-                  </div>
-                  <div className="flex-1 pl-8 md:pl-0 md:text-left md:ml-8">
-                    <h3 className="font-semibold text-white mb-1">Main Session</h3>
-                    <p className="text-sm text-white/60">Deep dive into the core topics.</p>
-                  </div>
-                </div>
-
-                <div className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="hidden md:flex flex-1 justify-end shrink-0 text-right pr-8">
-                    <span className="font-mono text-lime font-bold">14:00</span>
-                  </div>
-                  <div className="flex-1 pl-8 md:pl-0 md:text-left md:ml-8">
-                    <h3 className="font-semibold text-white mb-1">Workshop</h3>
-                    <p className="text-sm text-white/60">Hands-on practical applications.</p>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Event Image */}
-            {event.image_url ? (
-              <div className="rounded-2xl overflow-hidden border border-white/5 h-[300px] relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src={event.image_url.startsWith('http') ? event.image_url : `${API_BASE_URL}${event.image_url}`} 
-                  alt={event.title} 
-                  className="w-full h-full object-cover" 
-                />
-              </div>
-            ) : (
-              <div className="rounded-2xl bg-white/5 border border-white/5 h-[300px] flex items-center justify-center">
-                <span className="text-white/20 font-heading">Eventic Platform</span>
-              </div>
-            )}
-          </div>
-
-          <div className="lg:col-span-5 space-y-6">
-            {/* Registration Box */}
-            <div className="glass-panel rounded-2xl p-8 border border-white/5 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lime to-emerald-400"></div>
-
-              <div className="flex items-end justify-between mb-8">
+          <div className="space-y-6">
+            <div className="glass-panel rounded-3xl p-8 border border-white/10 bg-white/[0.04] shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-8 -right-6 h-24 w-24 rounded-full bg-lime/15 blur-2xl" />
+              <div className="flex items-end justify-between mb-6">
                 <div>
                   <h2 className="text-lg font-heading font-bold text-white mb-1">Register</h2>
                   <p className="text-xs text-white/60">Secure your position today.</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-lime font-bold block">{availability.remaining} / {availability.capacity}</span>
+                  <span className="text-lime font-bold block text-lg">{availability.remaining}</span>
                   <span className="text-[9px] font-bold uppercase tracking-widest text-white/40">Spots Remaining</span>
                 </div>
               </div>
 
               {regStatus === "success" ? (
-                <div className="py-12 flex flex-col items-center text-center">
+                <div className="py-10 flex flex-col items-center text-center">
                   <CheckCircle2 className="w-16 h-16 text-lime mb-4" />
                   <h3 className="text-xl font-bold text-white mb-2">Registration Complete!</h3>
                   <p className="text-sm text-white/60">{regMsg}</p>
                 </div>
               ) : !isRegistrationOpen ? (
-                <div className="py-12 flex flex-col items-center text-center bg-white/5 rounded-xl border border-white/10">
+                <div className="py-10 flex flex-col items-center text-center bg-white/5 rounded-2xl border border-white/10">
                   <AlertCircle className="w-12 h-12 text-white/20 mb-4" />
                   <h3 className="text-lg font-bold text-white mb-2">
-                    {availability.state === 'full' ? 'Event is Full' : 'Registration Closed'}
+                    {availability.state === "full" ? "Event is Full" : "Registration Closed"}
                   </h3>
                   <p className="text-sm text-white/60">
                     Unfortunately, we are not accepting new registrations at this time.
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleRegister} className="space-y-5">
+                <form onSubmit={handleRegister} className="space-y-4">
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Full Name</label>
                     <input
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+                      onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
                       className="w-full bg-[#1a1e0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-lime/50 transition-all placeholder:text-white/20"
                       placeholder="Enter your full name"
                     />
@@ -301,7 +242,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
                       type="email"
                       required
                       value={formData.email}
-                      onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
+                      onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
                       className="w-full bg-[#1a1e0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-lime/50 transition-all placeholder:text-white/20"
                       placeholder="name@company.com"
                     />
@@ -315,7 +256,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
                       type="tel"
                       required={requiresPhone}
                       value={formData.phone}
-                      onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+                      onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
                       className="w-full bg-[#1a1e0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-lime/50 transition-all placeholder:text-white/20"
                       placeholder="+1 (555) 000-0000"
                     />
@@ -335,7 +276,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
                   <button
                     type="submit"
                     disabled={regStatus === "loading"}
-                    className="w-full py-3.5 bg-lime text-[#0f1105] font-bold rounded-xl hover:bg-lime/90 transition-all active:scale-[0.98] disabled:opacity-50 mt-4"
+                    className="w-full py-3.5 bg-lime text-[#0f1105] font-bold rounded-xl hover:bg-lime/90 transition-all active:scale-[0.98] disabled:opacity-50 mt-2"
                   >
                     {regStatus === "loading" ? "Processing..." : "Complete Registration"}
                   </button>
@@ -347,11 +288,9 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
               )}
             </div>
 
-            {/* Hosted By */}
-            <div className="glass-panel rounded-2xl p-5 border border-white/5 flex items-center gap-4">
+            <div className="glass-panel rounded-2xl p-5 border border-white/10 flex items-center gap-4 bg-white/[0.04]">
               <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                 <span className="text-lg font-bold text-white">
-                  {/* First letter of organizer ID as placeholder */}
                   {event.organizer_id.charAt(0).toUpperCase()}
                 </span>
               </div>
@@ -361,12 +300,58 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* ── Map Section ── */}
-        {event.mode === 'offline' && event.location_lat && event.location_lng && (
-          <div className="mt-24">
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 lg:gap-12">
+          <div className="glass-panel rounded-3xl p-8 border border-white/10 bg-white/[0.04]">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-sm font-bold text-white">Event Timeline</h2>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{scheduleItems.length} moments</span>
+            </div>
+            <div className="relative pl-8">
+              <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-lime/40 via-white/10 to-transparent"></div>
+              <div className="space-y-6">
+                {scheduleItems.map((item, index) => (
+                  <div key={`${item.title}-${index}`} className="relative flex items-start gap-5">
+                    <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full border border-lime/30 bg-lime/10 text-lime">
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-lime/30 hover:bg-white/10">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                        {item.time && (
+                          <span className="text-[10px] font-mono uppercase tracking-widest text-lime">{item.time}</span>
+                        )}
+                      </div>
+                      {item.description && (
+                        <p className="text-xs text-white/60 mt-1">{item.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {event.image_url ? (
+            <div className="rounded-3xl overflow-hidden border border-white/10 h-[320px] lg:h-full relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={event.image_url.startsWith("http") ? event.image_url : `${API_BASE_URL}${event.image_url}`}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#0f1105]/80 via-transparent to-transparent" />
+            </div>
+          ) : (
+            <div className="rounded-3xl bg-white/5 border border-white/10 h-[320px] lg:h-full flex items-center justify-center">
+              <span className="text-white/20 font-heading">Eventic Platform</span>
+            </div>
+          )}
+        </div>
+
+        {event.mode === "offline" && event.location_lat && event.location_lng && (
+          <div className="mt-20">
             <div className="flex items-end justify-between mb-8">
               <div>
                 <h2 className="text-xl font-heading font-bold text-lime mb-2">Find Us</h2>
@@ -376,7 +361,7 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
               </div>
             </div>
 
-            <div className="h-[400px] w-full rounded-2xl overflow-hidden glass-panel border border-white/5 p-2">
+            <div className="h-[400px] w-full rounded-3xl overflow-hidden glass-panel border border-white/10 p-2">
               <MapDisplay
                 lat={event.location_lat}
                 lng={event.location_lng}
@@ -385,7 +370,6 @@ export default function PublicEventPage({ params }: { params: { slug: string } }
             </div>
           </div>
         )}
-
       </main>
 
       <Footer />
